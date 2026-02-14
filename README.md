@@ -1,49 +1,49 @@
-# 🌙 İftar Vakti Pro
+# Iftar Vakti Pro
 
-Modern ve şık bir PWA uygulaması ile iftar ve sahur vakitlerini takip edin.
+Modern ve sik bir PWA uygulamasi ile iftar ve sahur vakitlerini takip edin.
 
-![İftar Vakti Pro](https://img.shields.io/badge/İftar_Vakti-Pro-38bdf8?style=for-the-badge)
+![Iftar Vakti Pro](https://img.shields.io/badge/Iftar_Vakti-Pro-38bdf8?style=for-the-badge)
 
-## ✨ Özellikler
+## Ozellikler
 
-- 🕌 **Namaz Vakitleri** - Tüm namaz vakitlerini gerçek zamanlı takip
-- ⏱️ **Geri Sayım** - İftar ve sahur için canlı geri sayım
-- 📍 **Konum Tespiti** - Otomatik konum algılama veya 81 il seçimi
-- 🔔 **Bildirimler** - İftar ve sahur için hatırlatma bildirimleri
-- 📱 **PWA** - Telefona yüklenebilir uygulama deneyimi
-- 🌙 **Premium UI** - Glassmorphism ve modern tasarım
+- Namaz Vakitleri - Tum namaz vakitlerini gercek zamanli takip
+- Geri Sayim - Iftar ve sahur icin canli geri sayim
+- Konum Tespiti - Otomatik konum algilama veya 81 il secimi
+- Bildirimler - Iftar ve sahur icin hatirlatma bildirimleri
+- PWA - Telefona yuklenebilir uygulama deneyimi
+- Premium UI - Sacred Heritage dizayni ve modern tasarim
 
-## 🛠️ Teknolojiler
+## Teknolojiler
 
-- **Next.js 16** (App Router, Turbopack)
-- **React 19**
-- **Tailwind CSS v4**
-- **Framer Motion**
-- **Lucide Icons**
-- **Aladhan Prayer Times API**
-- **next-pwa**
+- Next.js 16 (App Router, Turbopack)
+- React 19
+- Tailwind CSS v4
+- Framer Motion
+- Lucide Icons
+- Aladhan Prayer Times API
+- next-pwa
 
-## 🚀 Kurulum
+## Kurulum
 
 ```bash
-git clone https://github.com/system-conf/iftarvaktip.git
-cd iftarvaktip
+git clone https://github.com/system-conf/iftarvaktipro.git
+cd iftarvaktipro
 npm install
 npm run dev
 ```
 
-## 📸 Ekran Görüntüleri
+## Ekran Goruntuleri
 
-> Yakında eklenecek
+> Yakinda eklenecek
 
-## 📄 Lisans
+## Lisans
 
 MIT License
 
-## 🤝 Katkıda Bulunun
+## Katkida Bulunun
 
 Pull request'lerinizi bekliyoruz!
 
 ---
 
-Made with ❤️ for Ramazan
+Made for Ramazan

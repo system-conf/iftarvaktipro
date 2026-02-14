@@ -12,6 +12,46 @@ export interface PrayerTimes {
   Isha: string;
   Imsak: string;
   Midnight: string;
+  [key: string]: string;
+}
+
+export interface DateInfo {
+  date: string;
+  format: string;
+  day: string;
+  weekday: {
+    en: string;
+    ar?: string;
+  };
+  month: {
+    number: number;
+    en: string;
+    ar?: string;
+  };
+  year: string;
+  designation: {
+    abbreviated: string;
+    expanded: string;
+  };
+}
+
+export interface PrayerData {
+  timings: PrayerTimes;
+  date: {
+    readable: string;
+    timestamp: string;
+    gregorian: DateInfo;
+    hijri: DateInfo;
+  };
+  meta: {
+    latitude: number;
+    longitude: number;
+    timezone: string;
+    method: {
+      id: number;
+      name: string;
+    };
+  };
 }
 
 export const getPrayerTimesByCity = async (city: string, country: string = 'Turkey') => {

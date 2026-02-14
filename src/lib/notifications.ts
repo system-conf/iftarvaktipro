@@ -16,15 +16,33 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
     return false;
 };
 
-export const sendNotification = (title: string, body: string, icon?: string) => {
+export const sendNotification = async (title: string, body: string, icon?: string) => {
     if (Notification.permission === 'granted') {
+        // Try to use Service Worker registration for better background support
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                registration.showNotification(title, {
+                    body,
+                    icon: icon || '/icon.svg',
+                    badge: '/icon.svg',
+                    vibrate: [200, 100, 200],
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } as any);
+                return;
+            }
+        }
+
+        // Fallback for non-SW environments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const notification = new Notification(title, {
             body,
-            icon: icon || '/icon-192x192.png',
-            badge: '/icon-192x192.png',
+            icon: icon || '/icon.svg',
+            badge: '/icon.svg',
             vibrate: [200, 100, 200],
             tag: 'iftar-notification',
-        });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any);
 
         notification.onclick = () => {
             window.focus();
@@ -46,8 +64,8 @@ export const scheduleIftarNotification = (iftarTime: string) => {
     const diff = alertTime.getTime() - now.getTime();
 
     if (diff > 0) {
-        setTimeout(() => {
-            sendNotification(
+        setTimeout(async () => {
+            await sendNotification(
                 '🌙 İftar Yaklaşıyor!',
                 `İftara 15 dakika kaldı. Hazırlıklarınızı yapın!`
             );
@@ -57,8 +75,8 @@ export const scheduleIftarNotification = (iftarTime: string) => {
     // At iftar time
     const iftarDiff = target.getTime() - now.getTime();
     if (iftarDiff > 0) {
-        setTimeout(() => {
-            sendNotification(
+        setTimeout(async () => {
+            await sendNotification(
                 '🕌 İftar Vakti!',
                 'Hayırlı iftarlar! Oruçlarınız kabul olsun.'
             );
@@ -79,8 +97,8 @@ export const scheduleSahurNotification = (fajrTime: string) => {
     const diff = alertTime.getTime() - now.getTime();
 
     if (diff > 0) {
-        setTimeout(() => {
-            sendNotification(
+        setTimeout(async () => {
+            await sendNotification(
                 '🌅 Sahur Bitiyor!',
                 `İmsak vaktine 30 dakika kaldı. Son lokmalarınızı alın!`
             );
