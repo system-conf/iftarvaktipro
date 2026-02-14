@@ -324,29 +324,27 @@ export default function Home() {
 
       {/* Header */}
       <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 flex justify-between items-center px-6 pt-10"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="relative z-10 px-6 pt-8 pb-4 flex justify-between items-center max-w-6xl mx-auto"
       >
-        <button
-          onClick={() => setShowCityModal(true)}
-          className="flex items-center gap-3 active:scale-95 transition-all"
-        >
-          <div className="w-10 h-10 rounded-full sacred-glass flex items-center justify-center border-sacred-gold/30">
-            <MapPin size={18} className="text-sacred-gold" />
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]">Konum</h2>
+            <div className="w-1.5 h-1.5 rounded-full bg-sacred-gold animate-pulse" />
           </div>
-          <div className="flex flex-col items-start">
-            <span className="text-[10px] text-sacred-gold/60 font-black uppercase tracking-widest whitespace-nowrap">Şehir Seçimi</span>
-            <span className="font-bold text-lg text-white leading-tight flex items-center gap-1">
-              {cityName}
-              <ChevronDown size={16} className="text-sacred-gold/40" />
-            </span>
-          </div>
-        </button>
+          <button
+            onClick={() => setShowCityModal(true)}
+            className="flex items-center gap-2 group"
+          >
+            <span className="text-2xl font-black text-white group-hover:text-sacred-gold transition-colors">{cityName}</span>
+            <ChevronDown size={20} className="text-sacred-gold group-hover:translate-y-0.5 transition-transform" />
+          </button>
+        </div>
 
         <button
           onClick={handleNotifToggle}
-          className={`w-12 h-12 rounded-full sacred-glass flex items-center justify-center active:scale-90 transition-all ${notifEnabled ? 'border-sacred-gold' : 'border-white/10'}`}
+          className="w-12 h-12 rounded-2xl sacred-glass border-white/5 flex items-center justify-center active:scale-95 transition-all relative"
         >
           {notifEnabled ? (
             <div className="relative">
@@ -359,171 +357,179 @@ export default function Home() {
         </button>
       </motion.header>
 
-      {/* Date */}
-      <div className="relative z-10 px-6 mt-8 flex flex-col items-center">
-        <div className="px-5 py-1.5 sacred-glass rounded-full border-sacred-gold/10">
-          <p className="text-[10px] font-black text-sacred-gold tracking-[0.3em] uppercase">{currentDate}</p>
-        </div>
-      </div>
-
-      {/* Mode Switcher */}
-      <section className="relative z-10 px-6 mt-8 flex justify-center">
-        <div className="sacred-glass p-1.5 rounded-2xl flex gap-1 border-sacred-gold/10">
-          <button
-            onClick={() => setViewMode('iftar')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all ${viewMode === 'iftar'
-              ? 'bg-sacred-gold text-emerald-deep shadow-xl'
-              : 'text-white/40 hover:text-white/70'}`}
-          >
-            <Sunset size={18} />
-            İftar
-          </button>
-          <button
-            onClick={() => setViewMode('sahur')}
-            className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all ${viewMode === 'sahur'
-              ? 'bg-sacred-gold text-emerald-deep shadow-xl'
-              : 'text-white/40 hover:text-white/70'}`}
-          >
-            <Sunrise size={18} />
-            Sahur
-          </button>
-        </div>
-      </section>
-
-      {/* High-Impact Countdown */}
-      <motion.section
-        key={viewMode}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 px-6 py-12 flex flex-col items-center overflow-hidden"
-      >
-        <div className="flex flex-col items-center gap-8">
-          <div className="text-[11px] font-black uppercase tracking-[0.5em] text-sacred-gold/40">
-            {viewMode === 'iftar' ? 'İftara Kalan Vakit' : 'İmsaka Kalan Vakit'}
+      <div className="max-w-6xl mx-auto w-full">
+        {/* Date */}
+        <div className="relative z-10 px-6 mt-8 flex flex-col items-center md:items-start">
+          <div className="px-5 py-1.5 sacred-glass rounded-full border-sacred-gold/10">
+            <p className="text-[10px] font-black text-sacred-gold tracking-[0.3em] uppercase">{currentDate}</p>
           </div>
-
-          <div className="flex items-end gap-3 text-white">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-20 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
-                <span className="text-4xl font-black text-gold-gradient">{time.hours}</span>
-              </div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saat</span>
-            </div>
-            <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-20 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
-                <span className="text-4xl font-black text-gold-gradient">{time.minutes}</span>
-              </div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Dakika</span>
-            </div>
-            <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-16 h-20 rounded-2xl bg-sacred-gold flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                <span className="text-4xl font-black text-emerald-deep">{time.seconds}</span>
-              </div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saniye</span>
-            </div>
-          </div>
-
-          <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="mt-4 flex items-center gap-4 px-8 py-3.5 sacred-glass rounded-2xl border-white/5"
-          >
-            {viewMode === 'iftar' ? (
-              <Moon size={22} className="text-sacred-gold animate-float-sacred" />
-            ) : (
-              <Star size={22} className="text-sacred-gold animate-float-sacred" />
-            )}
-            <div className="flex flex-col">
-              <span className="text-[9px] uppercase font-black tracking-widest text-white/30">Hedef Vakit</span>
-              <span className="text-xl font-black text-white tabular-nums">
-                {viewMode === 'iftar' ? data?.timings.Maghrib : data?.timings.Imsak}
-              </span>
-            </div>
-          </motion.div>
-        </div>
-      </motion.section>
-
-      {/* Prayer Times List */}
-      <section className="relative z-10 px-6">
-        <div className="flex items-center gap-4 mb-6">
-          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-sacred-gold/40">Günün Vakitleri</h3>
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-sacred-gold/20 to-transparent" />
         </div>
 
-        <div className="grid gap-3">
-          {MAIN_PRAYERS.map((prayer, index) => {
-            const Icon = prayerIconComponents[prayer] || Clock;
-            const isActive = activePrayer === prayer;
-            return (
-              <motion.div
-                key={prayer}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`sacred-card p-4 flex justify-between items-center ${isActive ? 'active' : ''}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-sacred-gold text-emerald-deep' : 'bg-white/5 text-sacred-gold/40'}`}>
-                    <Icon size={20} />
+        <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start lg:mt-4">
+
+          {/* Left Column: Countdown & Mode Switch */}
+          <div className="lg:col-span-5 lg:sticky lg:top-8">
+            {/* Mode Switcher */}
+            <section className="relative z-10 px-6 mt-8 flex justify-center lg:justify-start">
+              <div className="sacred-glass p-1.5 rounded-2xl flex gap-1 border-sacred-gold/10">
+                <button
+                  onClick={() => setViewMode('iftar')}
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all ${viewMode === 'iftar'
+                    ? 'bg-sacred-gold text-emerald-deep shadow-xl'
+                    : 'text-white/40 hover:text-white/70'}`}
+                >
+                  <Sunset size={18} />
+                  İftar
+                </button>
+                <button
+                  onClick={() => setViewMode('sahur')}
+                  className={`flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold transition-all ${viewMode === 'sahur'
+                    ? 'bg-sacred-gold text-emerald-deep shadow-xl'
+                    : 'text-white/40 hover:text-white/70'}`}
+                >
+                  <Sunrise size={18} />
+                  Sahur
+                </button>
+              </div>
+            </section>
+
+            {/* High-Impact Countdown */}
+            <motion.section
+              key={viewMode}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative z-10 px-6 py-8 md:py-12 flex flex-col items-center lg:items-start overflow-hidden"
+            >
+              <div className="flex flex-col items-center lg:items-start gap-8">
+                <div className="text-[11px] font-black uppercase tracking-[0.5em] text-sacred-gold/40">
+                  {viewMode === 'iftar' ? 'İftara Kalan Vakit' : 'İmsaka Kalan Vakit'}
+                </div>
+
+                <div className="flex items-end gap-3 text-white">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
+                      <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.hours}</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saat</span>
                   </div>
-                  <div className="flex flex-col">
-                    <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-white/70'}`}>{prayerNamesTr[prayer]}</span>
-                    {isActive && <span className="text-[8px] font-black uppercase tracking-[0.2em] text-sacred-gold">Şu An Geçerli</span>}
+                  <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
+                      <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.minutes}</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Dakika</span>
+                  </div>
+                  <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-sacred-gold flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+                      <span className="text-4xl md:text-5xl font-black text-emerald-deep">{time.seconds}</span>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saniye</span>
                   </div>
                 </div>
-                <span className={`text-xl font-black tabular-nums ${isActive ? 'text-sacred-gold' : 'text-white/40'}`}>
-                  {data?.timings[prayer]}
-                </span>
-              </motion.div>
-            );
-          })}
+
+                <motion.div
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="mt-4 flex items-center gap-4 px-8 py-3.5 sacred-glass rounded-2xl border-white/5"
+                >
+                  {viewMode === 'iftar' ? (
+                    <Moon size={22} className="text-sacred-gold animate-float-sacred" />
+                  ) : (
+                    <Star size={22} className="text-sacred-gold animate-float-sacred" />
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-[9px] uppercase font-black tracking-widest text-white/30">Hedef Vakit</span>
+                    <span className="text-xl font-black text-white tabular-nums text-center lg:text-left">
+                      {viewMode === 'iftar' ? data?.timings.Maghrib : data?.timings.Imsak}
+                    </span>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.section>
+          </div>
+
+          {/* Right Column: Prayer Times List */}
+          <div className="lg:col-span-7 lg:mt-8">
+            <section className="relative z-10 px-6 lg:px-0">
+              <div className="flex items-center gap-4 mb-6">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-sacred-gold/40">Günün Vakitleri</h3>
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-sacred-gold/20 to-transparent" />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                {MAIN_PRAYERS.map((prayer, index) => {
+                  const Icon = prayerIconComponents[prayer] || Clock;
+                  const isActive = activePrayer === prayer;
+                  return (
+                    <motion.div
+                      key={prayer}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`sacred-card p-4 flex justify-between items-center ${isActive ? 'active' : ''}`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-sacred-gold text-emerald-deep' : 'bg-white/5 text-sacred-gold/40'}`}>
+                          <Icon size={20} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-white/70'}`}>{prayerNamesTr[prayer]}</span>
+                          {isActive && <span className="text-[8px] font-black uppercase tracking-[0.2em] text-sacred-gold">Şu An Geçerli</span>}
+                        </div>
+                      </div>
+                      <span className={`text-xl font-black tabular-nums ${isActive ? 'text-sacred-gold' : 'text-white/40'}`}>
+                        {data?.timings[prayer]}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
         </div>
-      </section>
 
-      {/* Developer Attribution Section */}
-      <section className="px-6 py-12 relative z-10">
-        <div className="sacred-glass p-8 rounded-[40px] border-sacred-gold/10 flex flex-col items-center gap-8 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-sacred-gold/10 flex items-center justify-center">
-            <CloudMoon size={32} className="text-sacred-gold" />
-          </div>
-          <div>
-            <h4 className="font-black text-xl text-white mb-2 tracking-tight">İftar Vakti Pro</h4>
-            <p className="text-xs text-white/30 font-bold uppercase tracking-widest mb-6">./systemconf tarafından geliştirilmiştir</p>
-
-            <div className="flex flex-col gap-3 w-full">
-              <a
-                href="http://systemconf.online/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
-              >
-                <Globe size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-bold text-white/70">systemconf.online</span>
-              </a>
-
-              <a
-                href="https://github.com/system-conf/iftarvaktipro"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-sacred-gold/5 hover:bg-sacred-gold/10 rounded-2xl border border-sacred-gold/10 transition-all group"
-              >
-                <Github size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
-                <span className="text-sm font-bold text-sacred-gold">GitHub (Açık Kaynak)</span>
-              </a>
+        {/* Developer Attribution Section */}
+        <section className="px-6 py-12 relative z-10 max-w-2xl mx-auto lg:max-w-6xl">
+          <div className="sacred-glass p-8 rounded-[40px] border-sacred-gold/10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+            <div className="w-16 h-16 rounded-3xl bg-sacred-gold/10 flex items-center justify-center shrink-0">
+              <CloudMoon size={32} className="text-sacred-gold" />
             </div>
-          </div>
+            <div className="flex-1 w-full">
+              <div className="flex flex-col md:flex-row md:items-end md:gap-4 mb-2">
+                <h4 className="font-black text-xl text-white tracking-tight">İftar Vakti Pro</h4>
+                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-4 md:mb-1">./systemconf tarafından geliştirilmiştir</p>
+              </div>
 
-          <div className="flex items-center gap-4 w-full">
-            <div className="h-[1px] flex-1 bg-white/5" />
-            <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5">
+              <div className="flex flex-col sm:flex-row gap-3 w-full">
+                <a
+                  href="http://systemconf.online/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
+                >
+                  <Globe size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-bold text-white/70">systemconf.online</span>
+                </a>
+
+                <a
+                  href="https://github.com/system-conf/iftarvaktipro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-sacred-gold/5 hover:bg-sacred-gold/10 rounded-2xl border border-sacred-gold/10 transition-all group"
+                >
+                  <Github size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-bold text-sacred-gold">GitHub (Açık Kaynak)</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 shrink-0 px-3 py-1 rounded-full bg-white/5 border border-white/5">
               <span className="text-[10px] font-black text-white/20 tracking-widest">{VERSION}</span>
             </div>
-            <div className="h-[1px] flex-1 bg-white/5" />
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* Bottom Nav Dock */}
       <nav className="sacred-nav">
