@@ -25,15 +25,33 @@ import {
   CloudMoon,
   Loader2,
   Navigation,
-  Compass,
   Calendar,
-  LayoutDashboard,
+  Github,
+  Globe,
+  Info,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type ViewMode = 'iftar' | 'sahur';
 
 const MAIN_PRAYERS = ['Imsak', 'Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
+
+const TURKISH_MONTHS = [
+  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+];
+
+const TURKISH_DAYS: { [key: string]: string } = {
+  'Monday': 'Pazartesi',
+  'Tuesday': 'Salı',
+  'Wednesday': 'Çarşamba',
+  'Thursday': 'Perşembe',
+  'Friday': 'Cuma',
+  'Saturday': 'Cumartesi',
+  'Sunday': 'Pazar'
+};
+
+const VERSION = 'v1.1.0';
 
 export default function Home() {
   const [data, setData] = useState<PrayerData | null>(null);
@@ -43,6 +61,7 @@ export default function Home() {
   const [cityName, setCityName] = useState('Konum alınıyor...');
   const [showCityModal, setShowCityModal] = useState(false);
   const [showImsakiyeModal, setShowImsakiyeModal] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('iftar');
@@ -388,17 +407,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Info Notice */}
+      {/* Developer Attribution Section */}
       <section className="px-6 py-12 relative z-10">
-        <div className="sacred-glass p-6 rounded-3xl border-sacred-gold/10 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-sacred-gold/10 flex items-center justify-center shrink-0">
-            <Clock size={18} className="text-sacred-gold" />
+        <div className="sacred-glass p-8 rounded-[40px] border-sacred-gold/10 flex flex-col items-center gap-8 text-center">
+          <div className="w-16 h-16 rounded-3xl bg-sacred-gold/10 flex items-center justify-center">
+            <CloudMoon size={32} className="text-sacred-gold" />
           </div>
           <div>
-            <h4 className="font-bold text-white/80 text-sm mb-1">Hesaplama ve Kaynak</h4>
-            <p className="text-[11px] text-white/30 leading-relaxed font-medium capitalize">
-              Vakitler Aladhan Veri Merkezi Üzerinden, Türkiye Cumhuriyeti Diyanet İşleri Başkanlığı Standartlarına Uygun Olarak Hazırlanmıştır.
-            </p>
+            <h4 className="font-black text-xl text-white mb-2 tracking-tight">İftar Vakti Pro</h4>
+            <p className="text-xs text-white/30 font-bold uppercase tracking-widest mb-6">./systemconf tarafından geliştirilmiştir</p>
+
+            <div className="flex flex-col gap-3 w-full">
+              <a
+                href="http://systemconf.online/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
+              >
+                <Globe size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-bold text-white/70">systemconf.online</span>
+              </a>
+
+              <a
+                href="https://github.com/system-conf/iftarvaktipro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-sacred-gold/5 hover:bg-sacred-gold/10 rounded-2xl border border-sacred-gold/10 transition-all group"
+              >
+                <Github size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
+                <span className="text-sm font-bold text-sacred-gold">GitHub (Açık Kaynak)</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 w-full">
+            <div className="h-[1px] flex-1 bg-white/5" />
+            <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5">
+              <span className="text-[10px] font-black text-white/20 tracking-widest">{VERSION}</span>
+            </div>
+            <div className="h-[1px] flex-1 bg-white/5" />
           </div>
         </div>
       </section>
@@ -421,11 +468,11 @@ export default function Home() {
         </button>
 
         <button
-          onClick={() => setShowCityModal(true)}
+          onClick={() => setShowAboutModal(true)}
           className="flex flex-col items-center gap-1 text-white/20 hover:text-sacred-gold transition-all"
         >
-          <Compass size={20} />
-          <span className="text-[9px] font-black uppercase tracking-widest">Şehir</span>
+          <Info size={20} />
+          <span className="text-[9px] font-black uppercase tracking-widest">Hakkında</span>
         </button>
       </nav>
 
@@ -563,12 +610,18 @@ export default function Home() {
                   <tbody>
                     {imsakiyeData.map((day, idx) => {
                       const isToday = new Date().getDate() === parseInt(day.date.gregorian.day);
+                      // Translate Month
+                      const monthNum = day.date.gregorian.month.number - 1;
+                      const turkishMonth = TURKISH_MONTHS[monthNum] || day.date.gregorian.month.en;
+                      // Translate Day
+                      const turkishDay = TURKISH_DAYS[day.date.gregorian.weekday.en] || day.date.gregorian.weekday.en;
+
                       return (
                         <tr key={idx} className={`sacred-glass group text-sm font-bold transition-colors ${isToday ? 'bg-sacred-gold/20 border-sacred-gold' : 'hover:bg-white/5'}`}>
                           <td className="px-4 py-4 rounded-l-2xl border-l border-t border-b border-sacred-gold/10">
                             <div className="flex flex-col">
-                              <span className={isToday ? 'text-sacred-gold' : 'text-white'}>{day.date.gregorian.day} {day.date.gregorian.month.en}</span>
-                              <span className="text-[9px] text-white/30 font-black uppercase tracking-tighter">{day.date.gregorian.weekday.en}</span>
+                              <span className={isToday ? 'text-sacred-gold' : 'text-white'}>{day.date.gregorian.day} {turkishMonth}</span>
+                              <span className="text-[9px] text-white/30 font-black uppercase tracking-tighter">{turkishDay}</span>
                             </div>
                           </td>
                           <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
@@ -588,6 +641,50 @@ export default function Home() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* About Modal */}
+      <AnimatePresence>
+        {showAboutModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-emerald-deep/90 backdrop-blur-3xl flex items-center justify-center p-6"
+            onClick={() => setShowAboutModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm sacred-glass p-8 rounded-[40px] border-sacred-gold/20 flex flex-col items-center gap-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-16 h-16 rounded-3xl bg-sacred-gold/20 flex items-center justify-center">
+                <Info size={32} className="text-sacred-gold" />
+              </div>
+
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="text-2xl font-black text-white">Hakkında</h3>
+                <p className="text-xs text-white/30 font-bold uppercase tracking-widest underline decoration-sacred-gold/30 underline-offset-4">İftar Vakti Pro {VERSION}</p>
+              </div>
+
+              <p className="text-sm text-white/60 leading-relaxed text-center font-medium">
+                Bu uygulama, Ramazan ayında namaz ve iftar vakitlerini modern bir arayüzle sunmak amacıyla <span className="text-sacred-gold font-bold">systemconf</span> tarafından açık kaynak kodlu olarak geliştirilmiştir.
+              </p>
+
+              <div className="flex flex-col gap-3 w-full">
+                <a href="http://systemconf.online/" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-sacred-gold text-emerald-deep rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                  <Globe size={18} />
+                  systemconf.online
+                </a>
+                <button onClick={() => setShowAboutModal(false)} className="w-full py-4 bg-white/5 text-white/40 rounded-2xl font-bold text-sm uppercase tracking-widest active:scale-95 transition-all">
+                  Kapat
+                </button>
               </div>
             </motion.div>
           </motion.div>
