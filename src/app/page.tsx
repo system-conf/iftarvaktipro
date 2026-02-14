@@ -9,6 +9,7 @@ import {
   requestNotificationPermission,
   scheduleIftarNotification,
   scheduleSahurNotification,
+  sendTestNotification,
 } from '@/lib/notifications';
 import {
   Moon,
@@ -286,13 +287,6 @@ export default function Home() {
               <div className="absolute inset-0 ring-1 ring-inset ring-sacred-gold/30 rounded-[60px]" />
 
               <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4">
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  className="w-16 h-16 rounded-[30%] bg-sacred-gold/10 backdrop-blur-xl flex items-center justify-center border border-sacred-gold/30"
-                >
-                  <CloudMoon size={32} className="text-sacred-gold" />
-                </motion.div>
                 <div className="flex flex-col items-center gap-1">
                   <h1 className="text-3xl font-black text-white tracking-tighter gold-glow-text">İftar Vakti Pro</h1>
                   <p className="text-[10px] text-sacred-gold font-black uppercase tracking-[0.4em]">systemconf</p>
@@ -759,6 +753,15 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col gap-3 w-full">
+                {notifEnabled && (
+                  <button
+                    onClick={sendTestNotification}
+                    className="w-full py-4 bg-white/5 text-sacred-gold rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 border border-sacred-gold/20 active:scale-95 transition-all shadow-lg"
+                  >
+                    <BellRing size={18} />
+                    Test Bildirimi Gönder
+                  </button>
+                )}
                 <a href="http://systemconf.online/" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-sacred-gold text-emerald-deep rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
                   <Globe size={18} />
                   systemconf.online

@@ -105,3 +105,10 @@ export const scheduleSahurNotification = (fajrTime: string) => {
         }, diff);
     }
 };
+
+export const sendTestNotification = async () => {
+    await sendNotification(
+        '🔔 Bildirim Testi',
+        'Bu bir test bildirimidir. İftar Vakti Pro bildirimleri başarıyla çalışıyor!'
+    );
+};
