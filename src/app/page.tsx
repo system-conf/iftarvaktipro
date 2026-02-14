@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { getPrayerTimesByCoords, getPrayerTimesByCity } from '@/lib/api';
+import { getPrayerTimesByCoords } from '@/lib/api';
 import { getCountdown, formatDuration } from '@/lib/utils-time';
-import { prayerNamesTr, prayerIcons } from '@/lib/prayer-names';
+import { prayerNamesTr, prayerIconComponents } from '@/lib/prayer-names';
 import { turkishCities, City } from '@/lib/cities';
 import {
   requestNotificationPermission,
@@ -24,6 +24,7 @@ import {
   Sunset,
   Star,
   CloudMoon,
+  Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,7 +44,6 @@ export default function Home() {
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [currentDate, setCurrentDate] = useState('');
 
-  // Get current date once
   useEffect(() => {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat('tr-TR', {
@@ -55,14 +55,12 @@ export default function Home() {
     setCurrentDate(formatter.format(now));
   }, []);
 
-  // Fetch prayer times
   const fetchPrayerTimes = useCallback(async (lat: number, lng: number) => {
     try {
       const result = await getPrayerTimesByCoords(lat, lng);
       setData(result);
       setLoading(false);
 
-      // Schedule notifications if enabled
       if (notifEnabled) {
         scheduleIftarNotification(result.timings.Maghrib);
         scheduleSahurNotification(result.timings.Fajr);
@@ -73,7 +71,6 @@ export default function Home() {
     }
   }, [notifEnabled]);
 
-  // Geolocation on mount
   useEffect(() => {
     const saved = localStorage.getItem('selectedCity');
     if (saved) {
@@ -88,7 +85,6 @@ export default function Home() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
-          // Reverse geocode with Aladhan meta
           try {
             const result = await getPrayerTimesByCoords(latitude, longitude);
             setData(result);
@@ -102,7 +98,6 @@ export default function Home() {
           }
         },
         () => {
-          // Fallback to Istanbul
           setCityName('İstanbul');
           fetchPrayerTimes(41.0082, 28.9784);
         }
@@ -113,7 +108,6 @@ export default function Home() {
     }
   }, [fetchPrayerTimes]);
 
-  // Countdown timer
   useEffect(() => {
     if (!data) return;
 
@@ -126,7 +120,6 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [data, viewMode]);
 
-  // Select city
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
     setCityName(city.name);
@@ -137,7 +130,6 @@ export default function Home() {
     fetchPrayerTimes(city.lat, city.lng);
   };
 
-  // Toggle notifications
   const handleNotifToggle = async () => {
     if (!notifEnabled) {
       const granted = await requestNotificationPermission();
@@ -153,7 +145,6 @@ export default function Home() {
     }
   };
 
-  // Filtered cities
   const filteredCities = useMemo(
     () =>
       turkishCities.filter((c) =>
@@ -162,7 +153,6 @@ export default function Home() {
     [citySearch]
   );
 
-  // Determine active/next prayer
   const getActivePrayer = () => {
     if (!data) return '';
     const now = new Date();
@@ -179,7 +169,7 @@ export default function Home() {
   const activePrayer = getActivePrayer();
   const time = formatDuration(countdown);
 
-  // Loading skeleton
+  // Loading screen
   if (loading) {
     return (
       <main className="min-h-screen p-6 flex flex-col items-center justify-center gap-6">
@@ -190,16 +180,14 @@ export default function Home() {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center gap-5"
         >
-          <div className="relative">
-            <CloudMoon size={56} className="text-primary animate-float" />
-          </div>
+          <CloudMoon size={56} className="text-primary animate-float" />
           <h2 className="text-xl font-medium text-white/80">Yükleniyor...</h2>
+          <Loader2 size={28} className="text-primary animate-spin" />
           <div className="flex gap-3">
             <div className="shimmer w-20 h-20 rounded-2xl" />
             <div className="shimmer w-20 h-20 rounded-2xl" />
             <div className="shimmer w-20 h-20 rounded-2xl" />
           </div>
-          <div className="shimmer w-48 h-10 rounded-full mt-2" />
         </motion.div>
       </main>
     );
@@ -348,36 +336,47 @@ export default function Home() {
           Namaz Vakitleri
         </h3>
         <div className="flex flex-col gap-2.5">
-          {MAIN_PRAYERS.map((prayer, index) => (
-            <motion.div
-              key={prayer}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.7 + index * 0.06 }}
-              className={`prayer-card flex justify-between items-center ${activePrayer === prayer ? 'active pulse-glow' : ''
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{prayerIcons[prayer] || '🕌'}</span>
-                <div>
-                  <p className="font-semibold text-sm">
-                    {prayerNamesTr[prayer] || prayer}
-                  </p>
-                  {activePrayer === prayer && (
-                    <p className="text-[10px] text-primary font-medium uppercase tracking-wider mt-0.5">
-                      Aktif Vakit
-                    </p>
-                  )}
-                </div>
-              </div>
-              <span
-                className={`font-bold text-lg tabular-nums ${activePrayer === prayer ? 'gradient-text' : 'text-white/70'
+          {MAIN_PRAYERS.map((prayer, index) => {
+            const IconComponent = prayerIconComponents[prayer] || Clock;
+            return (
+              <motion.div
+                key={prayer}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.7 + index * 0.06 }}
+                className={`prayer-card flex justify-between items-center ${activePrayer === prayer ? 'active pulse-glow' : ''
                   }`}
               >
-                {data.timings[prayer]}
-              </span>
-            </motion.div>
-          ))}
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${activePrayer === prayer
+                      ? 'bg-primary/20'
+                      : 'bg-white/5'
+                    }`}>
+                    <IconComponent
+                      size={18}
+                      className={activePrayer === prayer ? 'text-primary' : 'text-white/40'}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">
+                      {prayerNamesTr[prayer] || prayer}
+                    </p>
+                    {activePrayer === prayer && (
+                      <p className="text-[10px] text-primary font-medium uppercase tracking-wider mt-0.5">
+                        Aktif Vakit
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <span
+                  className={`font-bold text-lg tabular-nums ${activePrayer === prayer ? 'gradient-text' : 'text-white/70'
+                    }`}
+                >
+                  {data.timings[prayer]}
+                </span>
+              </motion.div>
+            );
+          })}
         </div>
       </motion.section>
 
@@ -428,7 +427,7 @@ export default function Home() {
           </button>
           <button
             onClick={() => setShowCityModal(true)}
-            className={`flex flex-col items-center gap-1 transition-all text-white/30 hover:text-white/60`}
+            className="flex flex-col items-center gap-1 transition-all text-white/30 hover:text-white/60"
           >
             <MapPin size={22} />
             <span className="text-[10px] font-medium">Şehir</span>
@@ -512,7 +511,9 @@ export default function Home() {
                       {city.name}
                     </span>
                     {selectedCity?.name === city.name && (
-                      <span className="ml-auto text-xs text-primary">✓</span>
+                      <span className="ml-auto text-xs text-primary">
+                        <Sun size={14} />
+                      </span>
                     )}
                   </div>
                 ))}

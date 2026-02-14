@@ -1,3 +1,14 @@
+import {
+    Moon,
+    Sunrise,
+    Sun,
+    SunMedium,
+    CloudSun,
+    Sunset,
+    Star,
+} from 'lucide-react';
+import { ComponentType } from 'react';
+
 export const prayerNamesTr: Record<string, string> = {
     Imsak: 'İmsak',
     Fajr: 'Sabah',
@@ -9,12 +20,12 @@ export const prayerNamesTr: Record<string, string> = {
     Isha: 'Yatsı',
 };
 
-export const prayerIcons: Record<string, string> = {
-    Imsak: '🌙',
-    Fajr: '🌅',
-    Sunrise: '☀️',
-    Dhuhr: '🌞',
-    Asr: '🌤️',
-    Maghrib: '🌇',
-    Isha: '🌃',
+export const prayerIconComponents: Record<string, ComponentType<{ size?: number; className?: string }>> = {
+    Imsak: Moon,
+    Fajr: Sunrise,
+    Sunrise: Sun,
+    Dhuhr: SunMedium,
+    Asr: CloudSun,
+    Maghrib: Sunset,
+    Isha: Star,
 };

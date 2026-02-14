@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     title: "İftar Vakti Pro",
   },
   icons: {
-    icon: "/icon-192x192.png",
-    apple: "/icon-192x192.png",
+    icon: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 
