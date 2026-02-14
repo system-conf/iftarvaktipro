@@ -1,4 +1,4 @@
-# Iftar Vakti Pro 🌙
+# Iftar Vakti Pro
 
 Stay updated with iftar, sahur, and prayer times through a modern, elegant, and premium PWA application. Developed by [systemconf](http://systemconf.online), this project merges traditional Islamic aesthetics with cutting-edge web technology.
 
@@ -14,26 +14,26 @@ Stay updated with iftar, sahur, and prayer times through a modern, elegant, and 
 ![License](https://img.shields.io/badge/License-MIT-white?style=for-the-badge)
 [![Website](https://img.shields.io/badge/Web-iftarvaktipro.systemconf.online-064e3b?style=for-the-badge)](https://iftarvaktipro.systemconf.online)
 
-## ✨ Key Features
+## Key Features
 
-### 🏛️ Sacred Heritage Design
+### Sacred Heritage Design
 The application features a unique design language called "Sacred Heritage." Emerald green and gold tones are blended with arabesque geometric patterns to provide a serene and spiritual user experience.
 
-### 📍 Smart Location Services
+### Smart Location Services
 - **Automatic Geolocation**: Detects your location upon launch to fetch the most accurate prayer times.
 - **Manual City Selection**: Support for all 81 cities in Turkey as a fallback or manual preference.
 
-### 📅 Advanced Ramadan Calendar (Imsakiye)
+### Advanced Ramadan Calendar (Imsakiye)
 - Full 30-day Ramadan schedule.
 - Automatic highlighting of the current day.
 - Fully localized in Turkish.
 
-### 🔔 Notifications & Reminders
+### Notifications & Reminders
 - **Iftar & Sahur**: Instant notifications as the time approaches and when it arrives.
 - **PWA Support**: Install the app on your mobile device via "Add to Home Screen" for a native app feel.
 - **Premium Splash Screen**: An elegant welcome experience with high-quality cover art and smooth animations.
 
-## 🛠️ Technical Stack
+## Technical Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router & Turbopack)
 - **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/)
@@ -41,7 +41,7 @@ The application features a unique design language called "Sacred Heritage." Emer
 - **Data Source**: [Aladhan Prayer Times API](https://aladhan.com/prayer-times-api)
 - **PWA**: Integrated via `next-pwa` for offline support and background notifications.
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 To run the project locally:
 
@@ -59,17 +59,17 @@ To run the project locally:
    ```
 4. Visit `http://localhost:3000` in your browser.
 
-## 📸 Screenshots
+## Screenshots
 
 ![App Preview](public/image.png)
 
-## 📦 PWA Assets
+## PWA Assets
 
 | Icon (512x512) | Icon (192x192) | Apple Touch |
 | :---: | :---: | :---: |
 | ![512](public/icon-512.png) | ![192](public/icon-192.png) | ![Apple](public/apple-touch-icon.png) |
 
-## 🤝 Contribution
+## Contribution
 
 This project is open-source and welcomes community contributions.
 1. Fork the project.
@@ -78,7 +78,7 @@ This project is open-source and welcomes community contributions.
 4. Push to the branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**. See the `LICENSE` file for details.
 

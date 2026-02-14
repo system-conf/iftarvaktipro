@@ -1,4 +1,4 @@
-# İftar Vakti Pro 🌙
+# İftar Vakti Pro
 
 Modern, şık ve premium bir PWA uygulaması ile iftar, sahur ve namaz vakitlerini anlık takip edin. [systemconf](http://systemconf.online) tarafından geliştirilen bu proje, geleneksel İslami estetiği modern teknolojiyle birleştirir.
 
@@ -14,26 +14,26 @@ Modern, şık ve premium bir PWA uygulaması ile iftar, sahur ve namaz vakitleri
 ![License](https://img.shields.io/badge/Lisans-MIT-white?style=for-the-badge)
 [![Website](https://img.shields.io/badge/Web-iftarvaktipro.systemconf.online-064e3b?style=for-the-badge)](https://iftarvaktipro.systemconf.online)
 
-## ✨ Öne Çıkan Özellikler
+## Öne Çıkan Özellikler
 
-### 🏛️ Sacred Heritage Tasarımı
+### Sacred Heritage Tasarımı
 Uygulama, "Sacred Heritage" (Kutsal Miras) adını verdiğimiz özel bir tasarım diline sahiptir. Zümrüt yeşili ve altın sarısı tonları, arabesk geometrik desenlerle harmanlanarak huzurlu bir kullanıcı deneyimi sunar.
 
-### 📍 Akıllı Konum Servisleri
+### Akıllı Konum Servisleri
 - **Otomatik Geolocation**: Uygulama açıldığında konumunuzu tespit ederek en yakın vakitleri getirir.
 - **81 İl Seçimi**: Konum izni verilmediğinde Türkiye'nin tüm illeri arasından manuel seçim yapabilirsiniz.
 
-### 📅 Gelişmiş İmsakiye
+### Gelişmiş İmsakiye
 - 30 günlük tam Ramazan takvimi.
 - Bulunduğunuz güne özel otomatik vurgulama.
 - Tamamen Türkçe lokalizasyon.
 
-### 🔔 Bildirim ve Hatırlatıcılar
+### Bildirim ve Hatırlatıcılar
 - **İftar & Sahur**: Vakit yaklaşınca ve vakit geldiğinde anlık bildirimler.
 - **PWA Desteği**: Uygulamayı telefonunuza "Ana Ekrana Ekle" diyerek yükleyebilir ve yerel uygulama gibi kullanabilirsiniz.
 - **Giriş Ekranı (Splash)**: Premium kapak görseli ve akıcı animasyonlarla şık bir karşılama.
 
-## 🛠️ Teknik Altyapı
+## Teknik Altyapı
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router & Turbopack)
 - **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/)
@@ -41,7 +41,7 @@ Uygulama, "Sacred Heritage" (Kutsal Miras) adını verdiğimiz özel bir tasarı
 - **Veri Kaynağı**: [Aladhan Prayer Times API](https://aladhan.com/prayer-times-api)
 - **PWA**: `next-pwa` entegrasyonu ile offline destek ve bildirim altyapısı.
 
-## 🚀 Kurulum ve Çalıştırma
+## Kurulum ve Çalıştırma
 
 Projeyi yerel makinenizde çalıştırmak için:
 
@@ -59,17 +59,17 @@ Projeyi yerel makinenizde çalıştırmak için:
    ```
 4. Tarayıcınızda `http://localhost:3000` adresini açın.
 
-## 📸 Ekran Görüntüleri
+## Ekran Görüntüleri
 
 ![Uygulama Önizleme](public/image.png)
 
-## 📦 PWA Assetleri
+## PWA Assetleri
 
 | İkon (512x512) | İkon (192x192) | Apple Touch |
 | :---: | :---: | :---: |
 | ![512](public/icon-512.png) | ![192](public/icon-192.png) | ![Apple](public/apple-touch-icon.png) |
 
-## 🤝 Katkıda Bulunun
+## Katkıda Bulunun
 
 Bu proje açık kaynaklıdır ve topluluk katkılarına açıktır.
 1. Projeyi çatallayın (Fork).
@@ -78,7 +78,7 @@ Bu proje açık kaynaklıdır ve topluluk katkılarına açıktır.
 4. Dalınıza push yapın (`git push origin feature/YeniOzellik`).
 5. Bir Pull Request oluşturun.
 
-## 📄 Lisans
+## Lisans
 
 Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için `LICENSE` dosyasına bakabilirsiniz.
 
