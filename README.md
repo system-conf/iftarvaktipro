@@ -1,17 +1,21 @@
 # Iftar Vakti Pro
 
-Modern ve sik bir PWA uygulamasi ile iftar ve sahur vakitlerini takip edin.
+Modern ve şık bir PWA uygulaması ile iftar ve sahur vakitlerini takip edin. systemconf tarafından geliştirilmiştir.
+
+![Kapak](public/kapak.png)
 
 ![Iftar Vakti Pro](https://img.shields.io/badge/Iftar_Vakti-Pro-38bdf8?style=for-the-badge)
+[![Website](https://img.shields.io/badge/Website-iftarvaktipro.systemconf.online-064e3b?style=for-the-badge)](https://iftarvaktipro.systemconf.online)
 
-## Ozellikler
+## Özellikler
 
-- Namaz Vakitleri - Tum namaz vakitlerini gercek zamanli takip
-- Geri Sayim - Iftar ve sahur icin canli geri sayim
-- Konum Tespiti - Otomatik konum algilama veya 81 il secimi
-- Bildirimler - Iftar ve sahur icin hatirlatma bildirimleri
-- PWA - Telefona yuklenebilir uygulama deneyimi
-- Premium UI - Sacred Heritage dizayni ve modern tasarim
+- **Namaz Vakitleri** - Tüm namaz vakitlerini gerçek zamanlı takip
+- **Geri Sayım** - İftar ve sahur için canlı geri sayım
+- **İmsakiye** - 30 günlük tam Ramazan takvimi
+- **Konum Tespiti** - Otomatik konum algılama veya 81 il seçimi
+- **Bildirimler** - İftar ve sahur için hatırlatma bildirimleri
+- **PWA** - Telefona yüklenebilir uygulama deneyimi
+- **Premium UI** - Sacred Heritage (Zümrüt & Altın) modern tasarım
 
 ## Teknolojiler
 
@@ -21,7 +25,6 @@ Modern ve sik bir PWA uygulamasi ile iftar ve sahur vakitlerini takip edin.
 - Framer Motion
 - Lucide Icons
 - Aladhan Prayer Times API
-- next-pwa
 
 ## Kurulum
 
@@ -32,18 +35,24 @@ npm install
 npm run dev
 ```
 
-## Ekran Goruntuleri
+## Ekran Görüntüleri
 
-> Yakinda eklenecek
+![Uygulama Ekranı](public/image.png)
+
+## PWA Assetleri
+
+| İkon (512) | İkon (192) | Apple Touch |
+| :---: | :---: | :---: |
+| ![512](public/icon-512.png) | ![192](public/icon-192.png) | ![Apple](public/apple-touch-icon.png) |
 
 ## Lisans
 
 MIT License
 
-## Katkida Bulunun
+## Katkıda Bulunun
 
 Pull request'lerinizi bekliyoruz!
 
 ---
 
-Made for Ramazan
+Developed by [systemconf](http://systemconf.online)
