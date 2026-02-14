@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { getPrayerTimesByCoords, PrayerData } from '@/lib/api';
+import { getPrayerTimesByCoords, getCalendarByCoords, PrayerData } from '@/lib/api';
 import { getCountdown, formatDuration } from '@/lib/utils-time';
 import { prayerNamesTr, prayerIconComponents } from '@/lib/prayer-names';
 import { turkishCities, City } from '@/lib/cities';
@@ -26,6 +26,8 @@ import {
   Loader2,
   Navigation,
   Compass,
+  Calendar,
+  LayoutDashboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -35,10 +37,12 @@ const MAIN_PRAYERS = ['Imsak', 'Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Is
 
 export default function Home() {
   const [data, setData] = useState<PrayerData | null>(null);
+  const [imsakiyeData, setImsakiyeData] = useState<PrayerData[]>([]);
   const [countdown, setCountdown] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [cityName, setCityName] = useState('Konum alınıyor...');
   const [showCityModal, setShowCityModal] = useState(false);
+  const [showImsakiyeModal, setShowImsakiyeModal] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('iftar');
@@ -59,10 +63,21 @@ export default function Home() {
     });
   }, []);
 
+  const fetchImsakiye = useCallback(async (lat: number, lng: number) => {
+    try {
+      const now = new Date();
+      const result = await getCalendarByCoords(lat, lng, now.getMonth() + 1, now.getFullYear());
+      setImsakiyeData(result);
+    } catch (error) {
+      console.error('İmsakiye verileri alınamadı:', error);
+    }
+  }, []);
+
   const fetchPrayerTimes = useCallback(async (lat: number, lng: number) => {
     try {
       const result = await getPrayerTimesByCoords(lat, lng);
       setData(result);
+      fetchImsakiye(lat, lng);
       setLoading(false);
 
       if (notifEnabled) {
@@ -73,7 +88,7 @@ export default function Home() {
       console.error('Namaz vakitleri alınamadı:', error);
       setLoading(false);
     }
-  }, [notifEnabled]);
+  }, [notifEnabled, fetchImsakiye]);
 
   const getCurrentGeolocation = useCallback(async () => {
     setLoading(true);
@@ -84,6 +99,7 @@ export default function Home() {
           try {
             const result = await getPrayerTimesByCoords(latitude, longitude);
             setData(result);
+            fetchImsakiye(latitude, longitude);
             const tz = result.meta?.timezone || 'Türkiye';
             const parts = tz.split('/');
             setCityName(parts[parts.length - 1].replace(/_/g, ' '));
@@ -105,7 +121,7 @@ export default function Home() {
       setCityName('İstanbul');
       fetchPrayerTimes(41.0082, 28.9784);
     }
-  }, [fetchPrayerTimes]);
+  }, [fetchPrayerTimes, fetchImsakiye]);
 
   useEffect(() => {
     async function initCity() {
@@ -197,7 +213,7 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-sacred-gold tracking-tighter">İftar Vakti Pro</h2>
             <div className="flex items-center gap-2 text-white/40">
               <Loader2 size={16} className="animate-spin text-sacred-gold" />
-              <span className="text-xs uppercase tracking-[0.2em]">Vakitler Alınıyor...</span>
+              <span className="text-xs uppercase tracking-[0.2em]">Sistem Yükleniyor...</span>
             </div>
           </div>
         </motion.div>
@@ -390,15 +406,15 @@ export default function Home() {
       {/* Bottom Nav Dock */}
       <nav className="sacred-nav">
         <button
-          onClick={() => setViewMode('sahur')}
-          className={`flex flex-col items-center gap-1 transition-all ${viewMode === 'sahur' ? 'text-sacred-gold' : 'text-white/20'}`}
+          onClick={() => setShowImsakiyeModal(true)}
+          className="flex flex-col items-center gap-1 text-white/20 hover:text-sacred-gold transition-all"
         >
-          <Sunrise size={20} />
-          <span className="text-[9px] font-black uppercase tracking-widest">Sahur</span>
+          <Calendar size={20} />
+          <span className="text-[9px] font-black uppercase tracking-widest">İmsakiye</span>
         </button>
 
         <button
-          onClick={() => setViewMode('iftar')}
+          onClick={() => setViewMode(viewMode === 'iftar' ? 'sahur' : 'iftar')}
           className="nav-center-sacred"
         >
           <Moon size={28} />
@@ -489,6 +505,89 @@ export default function Home() {
                     );
                   })}
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Imsakiye Modal */}
+      <AnimatePresence>
+        {showImsakiyeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-emerald-deep/95 backdrop-blur-3xl flex items-end justify-center"
+            onClick={() => setShowImsakiyeModal(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 200 }}
+              className="w-full max-w-2xl max-h-[95vh] bg-sacred-bg border-t border-sacred-gold/30 rounded-t-[40px] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-center p-5">
+                <div className="w-10 h-1.5 rounded-full bg-sacred-gold/20" />
+              </div>
+
+              <div className="px-8 pb-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-3xl font-black text-gold-gradient tracking-tight">İmsakiye</h2>
+                  <p className="text-xs text-sacred-gold/60 font-black uppercase tracking-[0.2em]">{cityName} için Ramazan Takvimi</p>
+                </div>
+                <button
+                  onClick={() => setShowImsakiyeModal(false)}
+                  className="w-12 h-12 rounded-full sacred-glass flex items-center justify-center border-sacred-gold/20 shadow-lg active:scale-90 transition-all"
+                >
+                  <X size={24} className="text-sacred-gold" />
+                </button>
+              </div>
+
+              {/* Imsakiye Table */}
+              <div className="flex-1 overflow-x-auto overflow-y-auto px-4 pb-12 no-scrollbar">
+                <table className="w-full text-left border-separate border-spacing-y-2">
+                  <thead className="sticky top-0 z-20 bg-sacred-bg/80 backdrop-blur-md">
+                    <tr className="text-[10px] font-black uppercase tracking-widest text-sacred-gold/40">
+                      <th className="px-4 py-3">Gün</th>
+                      <th className="px-4 py-3">İmsak</th>
+                      <th className="px-4 py-3">Güneş</th>
+                      <th className="px-4 py-3">Öğle</th>
+                      <th className="px-4 py-3">İkindi</th>
+                      <th className="px-4 py-3">Akşam</th>
+                      <th className="px-4 py-3">Yatsı</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {imsakiyeData.map((day, idx) => {
+                      const isToday = new Date().getDate() === parseInt(day.date.gregorian.day);
+                      return (
+                        <tr key={idx} className={`sacred-glass group text-sm font-bold transition-colors ${isToday ? 'bg-sacred-gold/20 border-sacred-gold' : 'hover:bg-white/5'}`}>
+                          <td className="px-4 py-4 rounded-l-2xl border-l border-t border-b border-sacred-gold/10">
+                            <div className="flex flex-col">
+                              <span className={isToday ? 'text-sacred-gold' : 'text-white'}>{day.date.gregorian.day} {day.date.gregorian.month.en}</span>
+                              <span className="text-[9px] text-white/30 font-black uppercase tracking-tighter">{day.date.gregorian.weekday.en}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
+                            <span className={isToday ? 'text-sacred-gold' : 'text-white/60'}>{day.timings.Imsak}</span>
+                          </td>
+                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
+                            <span className="text-white/40">{day.timings.Sunrise}</span>
+                          </td>
+                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Dhuhr}</td>
+                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Asr}</td>
+                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
+                            <span className={isToday ? 'text-sacred-gold' : 'text-white font-black'}>{day.timings.Maghrib}</span>
+                          </td>
+                          <td className="px-4 py-4 rounded-r-2xl border-r border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Isha}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </motion.div>
           </motion.div>

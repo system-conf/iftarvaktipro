@@ -84,3 +84,21 @@ export const getPrayerTimesByCoords = async (lat: number, lng: number) => {
     throw error;
   }
 };
+
+export const getCalendarByCoords = async (lat: number, lng: number, month: number, year: number) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/calendar`, {
+      params: {
+        latitude: lat,
+        longitude: lng,
+        month,
+        year,
+        method: 13,
+      },
+    });
+    return response.data.data;
+  } catch (error) {
+    console.error('Error fetching calendar by coords:', error);
+    throw error;
+  }
+};
