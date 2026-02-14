@@ -58,7 +58,25 @@ export default function Home() {
   const [imsakiyeData, setImsakiyeData] = useState<PrayerData[]>([]);
   const [countdown, setCountdown] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [splashLoading, setSplashLoading] = useState(true);
   const [cityName, setCityName] = useState('Konum alınıyor...');
+
+  // Minimum splash time to ensure UX quality
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!loading) setSplashLoading(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setSplashLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showImsakiyeModal, setShowImsakiyeModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -242,6 +260,69 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-sacred-bg bg-arabesque pb-32">
+      <AnimatePresence>
+        {splashLoading && (
+          <motion.div
+            key="splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="fixed inset-0 z-[200] bg-sacred-bg flex flex-col items-center justify-center p-6 bg-arabesque"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.1, opacity: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="relative w-full max-w-sm aspect-[4/5] rounded-[60px] overflow-hidden shadow-[0_0_50px_rgba(2,44,34,0.5)] border border-sacred-gold/20"
+            >
+              <img
+                src="/kapak.png"
+                alt="İftar Vakti Pro"
+                className="w-full h-full object-cover"
+              />
+              {/* Gradient Overlays for a premium feel */}
+              <div className="absolute inset-0 bg-gradient-to-t from-sacred-bg via-transparent to-sacred-bg/40 opacity-80" />
+              <div className="absolute inset-0 ring-1 ring-inset ring-sacred-gold/30 rounded-[60px]" />
+
+              <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4">
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="w-16 h-16 rounded-[30%] bg-sacred-gold/10 backdrop-blur-xl flex items-center justify-center border border-sacred-gold/30"
+                >
+                  <CloudMoon size={32} className="text-sacred-gold" />
+                </motion.div>
+                <div className="flex flex-col items-center gap-1">
+                  <h1 className="text-3xl font-black text-white tracking-tighter gold-glow-text">İftar Vakti Pro</h1>
+                  <p className="text-[10px] text-sacred-gold font-black uppercase tracking-[0.4em]">systemconf</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-12 flex flex-col items-center gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <Loader2 size={16} className="animate-spin text-sacred-gold" />
+                <span className="text-[10px] text-white/30 font-black uppercase tracking-[0.3em]">Sistem Hazırlanıyor</span>
+              </div>
+              <div className="w-48 h-[2px] bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "0%" }}
+                  transition={{ duration: 2, ease: "linear" }}
+                  className="h-full bg-sacred-gold shadow-[0_0_10px_#d4af37]"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Ornaments */}
       <div className="fixed inset-0 pointer-events-none opacity-20 z-0">
         <div className="absolute top-[-10%] left-[-10%] w-full h-full bg-sacred-emerald rounded-full blur-[150px]" />
