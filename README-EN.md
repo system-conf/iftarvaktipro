@@ -29,9 +29,14 @@ The application features a unique design language called "Sacred Heritage." Emer
 - Fully localized in Turkish.
 
 ### Notifications & Reminders
+- **Granular Control**: Manage preferences for "Water Reminder" (45 mins before Suhoor) and "All Prayer Times Notifications" through the Settings menu.
 - **Iftar & Sahur**: Instant notifications as the time approaches and when it arrives.
 - **PWA Support**: Install the app on your mobile device via "Add to Home Screen" for a native app feel.
 - **Premium Splash Screen**: An elegant welcome experience with high-quality cover art and smooth animations.
+
+### Localization & Customization
+- **Dynamic Language Support**: Seamlessly switch between English and Turkish UI text.
+- **Advanced Settings Menu**: A user-friendly settings panel for managing language preferences and detailed notification configurations.
 
 ## Technical Stack
 
@@ -84,4 +89,4 @@ This project is licensed under the **MIT License**. See the `LICENSE` file for d
 
 ---
 
-Developed by [systemconf](http://systemconf.online)
+Developed by: [systemconf](http://systemconf.online) & [Mustafa Cem](https://www.mustafacem.dev/)

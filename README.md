@@ -29,9 +29,14 @@ Uygulama, "Sacred Heritage" (Kutsal Miras) adını verdiğimiz özel bir tasarı
 - Tamamen Türkçe lokalizasyon.
 
 ### Bildirim ve Hatırlatıcılar
+- **Granüler Kontrol**: Sadece iftar ve sahur değil, aynı zamanda "Namaz Vakitleri" ve "Su İç Hatırlatıcısı" (sahurdan 45 dk önce) seçeneklerini ayarlardan açıp kapatabilirsiniz.
 - **İftar & Sahur**: Vakit yaklaşınca ve vakit geldiğinde anlık bildirimler.
 - **PWA Desteği**: Uygulamayı telefonunuza "Ana Ekrana Ekle" diyerek yükleyebilir ve yerel uygulama gibi kullanabilirsiniz.
 - **Giriş Ekranı (Splash)**: Premium kapak görseli ve akıcı animasyonlarla şık bir karşılama.
+
+### Çoklu Dil ve Kişiselleştirme
+- **Dinamik Dil Desteği**: Uygulamayı anında Türkçe veya İngilizce olarak kullanma seçeneği.
+- **Gelişmiş Ayarlar Menüsü**: Dil tercihleri ve bildirim izinleri (Su hatırlatması, tüm vakitler için bildirim) için kullanıcı dostu ayarlar paneli.
 
 ## Teknik Altyapı
 
@@ -84,4 +89,4 @@ Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için `LICENSE` 
 
 ---
 
-Geliştirici: [systemconf](http://systemconf.online)
+Geliştiriciler: [systemconf](http://systemconf.online) & [Mustafa Cem](https://www.mustafacem.dev/)

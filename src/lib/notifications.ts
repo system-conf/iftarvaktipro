@@ -18,36 +18,40 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 
 export const sendNotification = async (title: string, body: string, icon?: string) => {
     if (Notification.permission === 'granted') {
-        // Try to use Service Worker registration for better background support
-        if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (registration) {
-                registration.showNotification(title, {
-                    body,
-                    icon: icon || '/icon.svg',
-                    badge: '/icon.svg',
-                    vibrate: [200, 100, 200],
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } as any);
-                return;
+        try {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                if (registrations.length > 0) {
+                    await registrations[0].showNotification(title, {
+                        body,
+                        icon: icon || '/icon-192.png',
+                        badge: '/icon-192.png',
+                        vibrate: [200, 100, 200],
+                        tag: 'iftar-notification',
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    } as any);
+                    return;
+                }
             }
+
+            // Fallback
+             
+            const notification = new Notification(title, {
+                body,
+                icon: icon || '/icon-192.png',
+                badge: '/icon-192.png',
+                vibrate: [200, 100, 200],
+                tag: 'iftar-notification',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            } as any);
+
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+        } catch (error) {
+            console.error('Bildirim hatası:', error);
         }
-
-        // Fallback for non-SW environments
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const notification = new Notification(title, {
-            body,
-            icon: icon || '/icon.svg',
-            badge: '/icon.svg',
-            vibrate: [200, 100, 200],
-            tag: 'iftar-notification',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any);
-
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
     }
 };
 
@@ -104,6 +108,68 @@ export const scheduleSahurNotification = (fajrTime: string) => {
             );
         }, diff);
     }
+
+    // At sahur time
+    const sahurDiff = target.getTime() - now.getTime();
+    if (sahurDiff > 0) {
+        setTimeout(async () => {
+            await sendNotification(
+                '🕌 İmsak Vakti!',
+                'Hayırlı sahurlar! Oruçlarınız kabul olsun.'
+            );
+        }, sahurDiff);
+    }
+};
+
+export const scheduleWaterReminder = (fajrTime: string) => {
+    const now = new Date();
+    const [hours, minutes] = fajrTime.split(':').map(Number);
+
+    const target = new Date();
+    target.setHours(hours, minutes, 0, 0);
+
+    // 45 minutes before sahur ends for water reminder
+    const alertTime = new Date(target.getTime() - 45 * 60 * 1000);
+    const diff = alertTime.getTime() - now.getTime();
+
+    if (diff > 0) {
+        setTimeout(async () => {
+            await sendNotification(
+                '💧 Su İçmeyi Unutmayın!',
+                'İmsak vaktine 45 dakika kaldı. Bol su içmeyi ihmal etmeyin.'
+            );
+        }, diff);
+    }
+};
+
+export const schedulePrayerNotifications = (timings: Record<string, string>) => {
+    const now = new Date();
+    const prayers = [
+        { key: 'Fajr', name: 'Sabah Namazı' },
+        { key: 'Dhuhr', name: 'Öğle Namazı' },
+        { key: 'Asr', name: 'İkindi Namazı' },
+        { key: 'Maghrib', name: 'Akşam Namazı' },
+        { key: 'Isha', name: 'Yatsı Namazı' },
+    ];
+
+    prayers.forEach((prayer) => {
+        if (!timings[prayer.key]) return;
+
+        const [hours, minutes] = timings[prayer.key].split(':').map(Number);
+        const target = new Date();
+        target.setHours(hours, minutes, 0, 0);
+
+        const diff = target.getTime() - now.getTime();
+
+        if (diff > 0) {
+            setTimeout(async () => {
+                await sendNotification(
+                    `🕌 ${prayer.name} Vakti`,
+                    `${prayer.name} vakti girdi. Hayırlı ibadetler.`
+                );
+            }, diff);
+        }
+    });
 };
 
 export const sendTestNotification = async () => {

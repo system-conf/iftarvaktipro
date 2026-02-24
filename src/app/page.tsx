@@ -3,13 +3,15 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getPrayerTimesByCoords, getCalendarByCoords, PrayerData } from '@/lib/api';
 import { getCountdown, formatDuration } from '@/lib/utils-time';
-import { prayerNamesTr, prayerIconComponents } from '@/lib/prayer-names';
+import { prayerNamesTr, prayerNamesEn, prayerIconComponents, MAIN_PRAYERS } from '@/lib/prayer-names';
 import { turkishCities, City } from '@/lib/cities';
 import {
   requestNotificationPermission,
   scheduleIftarNotification,
   scheduleSahurNotification,
   sendTestNotification,
+  scheduleWaterReminder,
+  schedulePrayerNotifications
 } from '@/lib/notifications';
 import {
   Moon,
@@ -24,33 +26,25 @@ import {
   Sunset,
   Star,
   CloudMoon,
-  Loader2,
   Navigation,
   Calendar,
   Github,
   Globe,
   Info,
+  Settings,
+  Droplets,
+  Languages,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AboutModal from '@/components/modals/AboutModal';
+import SettingsModal from '@/components/modals/SettingsModal';
+import CityModal from '@/components/modals/CityModal';
+import ImsakiyeModal from '@/components/modals/ImsakiyeModal';
+import BottomNav from '@/components/BottomNav';
+import PrayerTimesList from '@/components/PrayerTimesList';
+
 
 type ViewMode = 'iftar' | 'sahur';
-
-const MAIN_PRAYERS = ['Imsak', 'Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
-
-const TURKISH_MONTHS = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-];
-
-const TURKISH_DAYS: { [key: string]: string } = {
-  'Monday': 'Pazartesi',
-  'Tuesday': 'Salı',
-  'Wednesday': 'Çarşamba',
-  'Thursday': 'Perşembe',
-  'Friday': 'Cuma',
-  'Saturday': 'Cumartesi',
-  'Sunday': 'Pazar'
-};
 
 const VERSION = 'v1.1.0';
 
@@ -61,6 +55,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [splashLoading, setSplashLoading] = useState(true);
   const [cityName, setCityName] = useState('Konum alınıyor...');
+  const [isCelebrating, setIsCelebrating] = useState(false);
 
   // Minimum splash time to ensure UX quality
   useEffect(() => {
@@ -69,23 +64,37 @@ export default function Home() {
     }, 2500);
     return () => clearTimeout(timer);
   }, [loading]);
-
-  useEffect(() => {
-    if (!loading) {
-      const timer = setTimeout(() => {
-        setSplashLoading(false);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [loading]);
   const [showCityModal, setShowCityModal] = useState(false);
   const [showImsakiyeModal, setShowImsakiyeModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('iftar');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [currentDate, setCurrentDate] = useState('');
+  const [appSettings, setAppSettings] = useState<{
+    language: string;
+    waterReminder: boolean;
+    prayerNotifications: boolean;
+    fontSize?: 'small' | 'medium' | 'large';
+  }>({
+    language: 'tr',
+    waterReminder: true,
+    prayerNotifications: false,
+    fontSize: 'medium'
+  });
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (appSettings.fontSize === 'small') {
+      html.style.fontSize = '14px';
+    } else if (appSettings.fontSize === 'large') {
+      html.style.fontSize = '18px';
+    } else {
+      html.style.fontSize = '16px';
+    }
+  }, [appSettings.fontSize]);
 
   useEffect(() => {
     const now = new Date();
@@ -138,9 +147,29 @@ export default function Home() {
             const result = await getPrayerTimesByCoords(latitude, longitude);
             setData(result);
             fetchImsakiye(latitude, longitude);
-            const tz = result.meta?.timezone || 'Türkiye';
-            const parts = tz.split('/');
-            setCityName(parts[parts.length - 1].replace(/_/g, ' '));
+
+            let minDistance = Infinity;
+            let closestCityName = 'Konum';
+
+            if (turkishCities && turkishCities.length > 0) {
+              for (const city of turkishCities) {
+                const dLat = city.lat - latitude;
+                const dLng = city.lng - longitude;
+                const distance = dLat * dLat + dLng * dLng;
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestCityName = city.name;
+                }
+              }
+            }
+
+            if (minDistance > 10) {
+              const tz = result.meta?.timezone || 'Türkiye';
+              const parts = tz.split('/');
+              closestCityName = parts[parts.length - 1].replace(/_/g, ' ');
+            }
+
+            setCityName(closestCityName);
             setLoading(false);
             localStorage.removeItem('selectedCity');
           } catch {
@@ -174,14 +203,35 @@ export default function Home() {
       getCurrentGeolocation();
     }
 
+    const loadSettings = () => {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        setAppSettings(JSON.parse(savedSettings));
+      }
+    };
+
     initCity();
+    loadSettings();
   }, [fetchPrayerTimes, getCurrentGeolocation]);
 
   useEffect(() => {
     if (!data) return;
     const targetKey = viewMode === 'iftar' ? 'Maghrib' : 'Imsak';
     const timer = setInterval(() => {
-      const diff = getCountdown(data.timings[targetKey]);
+      const now = new Date();
+      const targetTimeStr = data.timings[targetKey];
+      const target = new Date();
+      const [h, m] = targetTimeStr.split(':').map(Number);
+      target.setHours(h, m, 0, 0);
+
+      const diffMs = now.getTime() - target.getTime();
+      if (diffMs >= 0 && diffMs < 30 * 60 * 1000) {
+        setIsCelebrating(true);
+      } else {
+        setIsCelebrating(false);
+      }
+
+      const diff = getCountdown(targetTimeStr);
       setCountdown(diff);
     }, 1000);
     return () => clearInterval(timer);
@@ -205,6 +255,8 @@ export default function Home() {
         if (data) {
           scheduleIftarNotification(data.timings.Maghrib);
           scheduleSahurNotification(data.timings.Fajr);
+          if (appSettings.waterReminder) scheduleWaterReminder(data.timings.Fajr);
+          if (appSettings.prayerNotifications) schedulePrayerNotifications(data.timings);
         }
       }
     } else {
@@ -236,28 +288,6 @@ export default function Home() {
   const activePrayer = getActivePrayer();
   const time = formatDuration(countdown);
 
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-sacred-bg flex flex-col items-center justify-center p-6 gap-6 bg-arabesque">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-8"
-        >
-          <div className="w-24 h-24 rounded-[30%] bg-sacred-emerald border border-sacred-gold/20 flex items-center justify-center shadow-2xl relative">
-            <CloudMoon size={48} className="text-sacred-gold animate-float-sacred" />
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <h2 className="text-2xl font-bold text-sacred-gold tracking-tighter">İftar Vakti Pro</h2>
-            <div className="flex items-center gap-2 text-white/40">
-              <Loader2 size={16} className="animate-spin text-sacred-gold" />
-              <span className="text-xs uppercase tracking-[0.2em]">Sistem Yükleniyor...</span>
-            </div>
-          </div>
-        </motion.div>
-      </main>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-sacred-bg bg-arabesque pb-32">
@@ -275,7 +305,7 @@ export default function Home() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 1.1, opacity: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
-              className="relative w-full max-w-sm aspect-[4/5] rounded-[60px] overflow-hidden shadow-[0_0_50px_rgba(2,44,34,0.5)] border border-sacred-gold/20"
+              className="relative w-full max-w-[280px] aspect-[4/5] rounded-[50px] overflow-hidden shadow-[0_0_50px_rgba(2,44,34,0.5)] border border-sacred-gold/20"
             >
               <img
                 src="/kapak.png"
@@ -284,12 +314,12 @@ export default function Home() {
               />
               {/* Gradient Overlays for a premium feel */}
               <div className="absolute inset-0 bg-gradient-to-t from-sacred-bg via-transparent to-sacred-bg/40 opacity-80" />
-              <div className="absolute inset-0 ring-1 ring-inset ring-sacred-gold/30 rounded-[60px]" />
+              <div className="absolute inset-0 ring-1 ring-inset ring-sacred-gold/30 rounded-[50px]" />
 
-              <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4">
+              <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center gap-3">
                 <div className="flex flex-col items-center gap-1">
-                  <h1 className="text-3xl font-black text-white tracking-tighter gold-glow-text">İftar Vakti Pro</h1>
-                  <p className="text-[10px] text-sacred-gold font-black uppercase tracking-[0.4em]">systemconf</p>
+                  <h1 className="text-2xl font-black text-white tracking-tighter gold-glow-text">İftar Vakti Pro</h1>
+                  <p className="text-[9px] text-sacred-gold font-black uppercase tracking-[0.4em]">systemconf</p>
                 </div>
               </div>
             </motion.div>
@@ -298,13 +328,9 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-12 flex flex-col items-center gap-4"
+              className="mt-10 flex flex-col items-center gap-4"
             >
-              <div className="flex items-center gap-3">
-                <Loader2 size={16} className="animate-spin text-sacred-gold" />
-                <span className="text-[10px] text-white/30 font-black uppercase tracking-[0.3em]">Sistem Hazırlanıyor</span>
-              </div>
-              <div className="w-48 h-[2px] bg-white/5 rounded-full overflow-hidden">
+              <div className="w-40 h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ x: "-100%" }}
                   animate={{ x: "0%" }}
@@ -330,14 +356,14 @@ export default function Home() {
       >
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]">Konum</h2>
+            <h2 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]">{appSettings.language === 'tr' ? 'Konum' : 'Location'}</h2>
             <div className="w-1.5 h-1.5 rounded-full bg-sacred-gold animate-pulse" />
           </div>
           <button
             onClick={() => setShowCityModal(true)}
             className="flex items-center gap-2 group"
           >
-            <span className="text-2xl font-black text-white group-hover:text-sacred-gold transition-colors">{cityName}</span>
+            <span className="text-2xl font-black text-white group-hover:text-sacred-gold transition-colors">{cityName === 'Konum alınıyor...' && appSettings.language === 'en' ? 'Locating...' : cityName}</span>
             <ChevronDown size={20} className="text-sacred-gold group-hover:translate-y-0.5 transition-transform" />
           </button>
         </div>
@@ -379,7 +405,7 @@ export default function Home() {
                     : 'text-white/40 hover:text-white/70'}`}
                 >
                   <Sunset size={18} />
-                  İftar
+                  {appSettings.language === 'tr' ? 'İftar' : 'Iftar'}
                 </button>
                 <button
                   onClick={() => setViewMode('sahur')}
@@ -388,7 +414,7 @@ export default function Home() {
                     : 'text-white/40 hover:text-white/70'}`}
                 >
                   <Sunrise size={18} />
-                  Sahur
+                  {appSettings.language === 'tr' ? 'Sahur' : 'Suhoor'}
                 </button>
               </div>
             </section>
@@ -400,92 +426,87 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               className="relative z-10 px-6 py-8 md:py-12 flex flex-col items-center lg:items-start overflow-hidden"
             >
-              <div className="flex flex-col items-center lg:items-start gap-8">
-                <div className="text-[11px] font-black uppercase tracking-[0.5em] text-sacred-gold/40">
-                  {viewMode === 'iftar' ? 'İftara Kalan Vakit' : 'İmsaka Kalan Vakit'}
-                </div>
-
-                <div className="flex items-end gap-3 text-white">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
-                      <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.hours}</span>
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saat</span>
-                  </div>
-                  <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
-                      <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.minutes}</span>
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Dakika</span>
-                  </div>
-                  <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-sacred-gold flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                      <span className="text-4xl md:text-5xl font-black text-emerald-deep">{time.seconds}</span>
-                    </div>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Saniye</span>
-                  </div>
-                </div>
-
+              {isCelebrating ? (
                 <motion.div
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                  className="mt-4 flex items-center gap-4 px-8 py-3.5 sacred-glass rounded-2xl border-white/5"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-6 py-8 w-full lg:items-start"
                 >
-                  {viewMode === 'iftar' ? (
-                    <Moon size={22} className="text-sacred-gold animate-float-sacred" />
-                  ) : (
-                    <Star size={22} className="text-sacred-gold animate-float-sacred" />
-                  )}
-                  <div className="flex flex-col">
-                    <span className="text-[9px] uppercase font-black tracking-widest text-white/30">Hedef Vakit</span>
-                    <span className="text-xl font-black text-white tabular-nums text-center lg:text-left">
-                      {viewMode === 'iftar' ? data?.timings.Maghrib : data?.timings.Imsak}
-                    </span>
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-sacred-gold/10 flex items-center justify-center shadow-[0_0_50px_rgba(212,175,55,0.2)] relative border border-sacred-gold/30">
+                    {viewMode === 'iftar' ? (
+                      <Moon size={48} className="text-sacred-gold animate-pulse" />
+                    ) : (
+                      <Sunrise size={48} className="text-sacred-gold animate-pulse" />
+                    )}
+                  </div>
+                  <div className="text-center lg:text-left flex flex-col gap-2">
+                    <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gold-gradient tracking-tight">
+                      {viewMode === 'iftar' ? 'Hayırlı İftarlar' : 'Hayırlı Sahurlar'}
+                    </h2>
+                    <p className="text-white/40 font-bold uppercase tracking-[0.2em] md:text-lg">
+                      {viewMode === 'iftar' ? 'Allah Kabul Etsin' : 'Bereketli Olsun'}
+                    </p>
                   </div>
                 </motion.div>
-              </div>
+              ) : (
+                <div className="flex flex-col items-center lg:items-start gap-8">
+                  <div className="text-[11px] font-black uppercase tracking-[0.5em] text-sacred-gold/40">
+                    {appSettings.language === 'tr'
+                      ? (viewMode === 'iftar' ? 'İftara Kalan Vakit' : 'İmsaka Kalan Vakit')
+                      : (viewMode === 'iftar' ? 'Time left for Iftar' : 'Time left for Suhoor')}
+                  </div>
+
+                  <div className="flex items-end gap-3 text-white">
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
+                        <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.hours}</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">{appSettings.language === 'tr' ? 'Saat' : 'Hours'}</span>
+                    </div>
+                    <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-gradient-to-b from-white/10 to-transparent border border-white/10 flex items-center justify-center">
+                        <span className="text-4xl md:text-5xl font-black text-gold-gradient">{time.minutes}</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">{appSettings.language === 'tr' ? 'Dakika' : 'Minutes'}</span>
+                    </div>
+                    <span className="text-3xl font-black text-sacred-gold/20 pb-10">:</span>
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="w-16 h-20 md:w-20 md:h-24 rounded-2xl bg-sacred-gold flex items-center justify-center shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+                        <span className="text-4xl md:text-5xl font-black text-emerald-deep">{time.seconds}</span>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">{appSettings.language === 'tr' ? 'Saniye' : 'Seconds'}</span>
+                    </div>
+                  </div>
+
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="mt-4 flex items-center gap-4 px-8 py-3.5 sacred-glass rounded-2xl border-white/5"
+                  >
+                    {viewMode === 'iftar' ? (
+                      <Moon size={22} className="text-sacred-gold animate-float-sacred" />
+                    ) : (
+                      <Star size={22} className="text-sacred-gold animate-float-sacred" />
+                    )}
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase font-black tracking-widest text-white/30">{appSettings.language === 'tr' ? 'Hedef Vakit' : 'Target Time'}</span>
+                      <span className="text-xl font-black text-white tabular-nums text-center lg:text-left">
+                        {viewMode === 'iftar' ? data?.timings.Maghrib : data?.timings.Imsak}
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
             </motion.section>
           </div>
 
-          {/* Right Column: Prayer Times List */}
           <div className="lg:col-span-7 lg:mt-8">
-            <section className="relative z-10 px-6 lg:px-0">
-              <div className="flex items-center gap-4 mb-6">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-sacred-gold/40">Günün Vakitleri</h3>
-                <div className="h-[1px] flex-1 bg-gradient-to-r from-sacred-gold/20 to-transparent" />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                {MAIN_PRAYERS.map((prayer, index) => {
-                  const Icon = prayerIconComponents[prayer] || Clock;
-                  const isActive = activePrayer === prayer;
-                  return (
-                    <motion.div
-                      key={prayer}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className={`sacred-card p-4 flex justify-between items-center ${isActive ? 'active' : ''}`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-sacred-gold text-emerald-deep' : 'bg-white/5 text-sacred-gold/40'}`}>
-                          <Icon size={20} />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className={`text-sm font-bold ${isActive ? 'text-white' : 'text-white/70'}`}>{prayerNamesTr[prayer]}</span>
-                          {isActive && <span className="text-[8px] font-black uppercase tracking-[0.2em] text-sacred-gold">Şu An Geçerli</span>}
-                        </div>
-                      </div>
-                      <span className={`text-xl font-black tabular-nums ${isActive ? 'text-sacred-gold' : 'text-white/40'}`}>
-                        {data?.timings[prayer]}
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </section>
+            <PrayerTimesList
+              appSettings={appSettings}
+              activePrayer={activePrayer}
+              data={data}
+            />
           </div>
         </div>
 
@@ -498,7 +519,7 @@ export default function Home() {
             <div className="flex-1 w-full">
               <div className="flex flex-col md:flex-row md:items-end md:gap-4 mb-2">
                 <h4 className="font-black text-xl text-white tracking-tight">İftar Vakti Pro</h4>
-                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-4 md:mb-1">./systemconf tarafından geliştirilmiştir</p>
+                <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest mb-4 md:mb-1">{appSettings.language === 'tr' ? './systemconf tarafından geliştirilmiştir' : 'Developed by ./systemconf'}</p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -509,7 +530,17 @@ export default function Home() {
                   className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
                 >
                   <Globe size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-bold text-white/70">systemconf.online</span>
+                  <span className="text-sm font-bold text-white/70">systemconf</span>
+                </a>
+
+                <a
+                  href="https://www.mustafacem.dev/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 transition-all group"
+                >
+                  <Globe size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-bold text-white/70">mustafacem</span>
                 </a>
 
                 <a
@@ -519,7 +550,7 @@ export default function Home() {
                   className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-sacred-gold/5 hover:bg-sacred-gold/10 rounded-2xl border border-sacred-gold/10 transition-all group"
                 >
                   <Github size={18} className="text-sacred-gold group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-bold text-sacred-gold">GitHub (Açık Kaynak)</span>
+                  <span className="text-sm font-bold text-sacred-gold">{appSettings.language === 'tr' ? 'GitHub (Açık Kaynak)' : 'GitHub (Open Source)'}</span>
                 </a>
               </div>
             </div>
@@ -532,254 +563,51 @@ export default function Home() {
       </div>
 
       {/* Bottom Nav Dock */}
-      <nav className="sacred-nav">
-        <button
-          onClick={() => setShowImsakiyeModal(true)}
-          className="flex flex-col items-center gap-1 text-white/20 hover:text-sacred-gold transition-all"
-        >
-          <Calendar size={20} />
-          <span className="text-[9px] font-black uppercase tracking-widest">İmsakiye</span>
-        </button>
+      <BottomNav
+        appSettings={appSettings}
+        setShowSettingsModal={setShowSettingsModal}
+        setShowImsakiyeModal={setShowImsakiyeModal}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        setShowAboutModal={setShowAboutModal}
+      />
 
-        <button
-          onClick={() => setViewMode(viewMode === 'iftar' ? 'sahur' : 'iftar')}
-          className="nav-center-sacred"
-        >
-          <Moon size={28} />
-        </button>
+      <CityModal
+        showCityModal={showCityModal}
+        setShowCityModal={setShowCityModal}
+        appSettings={appSettings}
+        getCurrentGeolocation={getCurrentGeolocation}
+        citySearch={citySearch}
+        setCitySearch={setCitySearch}
+        filteredCities={filteredCities}
+        selectedCity={selectedCity}
+        handleCitySelect={handleCitySelect}
+      />
 
-        <button
-          onClick={() => setShowAboutModal(true)}
-          className="flex flex-col items-center gap-1 text-white/20 hover:text-sacred-gold transition-all"
-        >
-          <Info size={20} />
-          <span className="text-[9px] font-black uppercase tracking-widest">Hakkında</span>
-        </button>
-      </nav>
+      <ImsakiyeModal
+        showImsakiyeModal={showImsakiyeModal}
+        setShowImsakiyeModal={setShowImsakiyeModal}
+        appSettings={appSettings}
+        cityName={cityName}
+        imsakiyeData={imsakiyeData}
+      />
 
-      {/* City Modal */}
-      <AnimatePresence>
-        {showCityModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-emerald-deep/90 backdrop-blur-3xl flex items-end justify-center"
-            onClick={() => setShowCityModal(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="w-full max-w-lg max-h-[90vh] bg-sacred-bg border-t border-sacred-gold/20 rounded-t-[40px] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-center p-5">
-                <div className="w-10 h-1 rounded-full bg-sacred-gold/10" />
-              </div>
+      <AboutModal
+        showAboutModal={showAboutModal}
+        setShowAboutModal={setShowAboutModal}
+        appSettings={appSettings}
+        notifEnabled={notifEnabled}
+        sendTestNotification={sendTestNotification}
+        version={VERSION}
+      />
 
-              <div className="px-10 pb-6 flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-black text-sacred-gold">Şehir Seçin</h2>
-                  <p className="text-xs text-white/20 font-bold uppercase tracking-widest">Türkiye İlleri Listesi</p>
-                </div>
-                <button
-                  onClick={() => setShowCityModal(false)}
-                  className="w-10 h-10 rounded-full sacred-glass flex items-center justify-center border-white/5"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="px-10 pb-6">
-                <button
-                  onClick={() => {
-                    getCurrentGeolocation();
-                    setShowCityModal(false);
-                  }}
-                  className="w-full bg-sacred-gold text-emerald-deep p-4 rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl active:scale-95 transition-all"
-                >
-                  <Navigation size={18} />
-                  Konumumu Otomatik Belirle
-                </button>
-
-                <div className="relative mt-4">
-                  <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-sacred-gold/30" />
-                  <input
-                    type="text"
-                    placeholder="Şehir ara..."
-                    value={citySearch}
-                    onChange={(e) => setCitySearch(e.target.value)}
-                    className="w-full bg-white/5 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-sacred-gold/40 transition-all font-medium"
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-10 pb-20 no-scrollbar">
-                <div className="grid gap-2">
-                  {filteredCities.map((city) => {
-                    const isSelected = selectedCity?.name === city.name;
-                    return (
-                      <button
-                        key={city.name}
-                        onClick={() => handleCitySelect(city)}
-                        className={`flex items-center gap-4 p-5 rounded-3xl transition-all ${isSelected ? 'bg-sacred-gold/10 border border-sacred-gold/20' : 'hover:bg-white/5 border border-transparent'}`}
-                      >
-                        <MapPin size={18} className={isSelected ? 'text-sacred-gold' : 'text-white/10'} />
-                        <span className={`text-xl font-bold ${isSelected ? 'text-sacred-gold' : 'text-white/60'}`}>{city.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Imsakiye Modal */}
-      <AnimatePresence>
-        {showImsakiyeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-emerald-deep/95 backdrop-blur-3xl flex items-end justify-center"
-            onClick={() => setShowImsakiyeModal(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-              className="w-full max-w-2xl max-h-[95vh] bg-sacred-bg border-t border-sacred-gold/30 rounded-t-[40px] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-center p-5">
-                <div className="w-10 h-1.5 rounded-full bg-sacred-gold/20" />
-              </div>
-
-              <div className="px-8 pb-6 flex justify-between items-center">
-                <div>
-                  <h2 className="text-3xl font-black text-gold-gradient tracking-tight">İmsakiye</h2>
-                  <p className="text-xs text-sacred-gold/60 font-black uppercase tracking-[0.2em]">{cityName} için Ramazan Takvimi</p>
-                </div>
-                <button
-                  onClick={() => setShowImsakiyeModal(false)}
-                  className="w-12 h-12 rounded-full sacred-glass flex items-center justify-center border-sacred-gold/20 shadow-lg active:scale-90 transition-all"
-                >
-                  <X size={24} className="text-sacred-gold" />
-                </button>
-              </div>
-
-              {/* Imsakiye Table */}
-              <div className="flex-1 overflow-x-auto overflow-y-auto px-4 pb-12 no-scrollbar">
-                <table className="w-full text-left border-separate border-spacing-y-2">
-                  <thead className="sticky top-0 z-20 bg-sacred-bg/80 backdrop-blur-md">
-                    <tr className="text-[10px] font-black uppercase tracking-widest text-sacred-gold/40">
-                      <th className="px-4 py-3">Gün</th>
-                      <th className="px-4 py-3">İmsak</th>
-                      <th className="px-4 py-3">Güneş</th>
-                      <th className="px-4 py-3">Öğle</th>
-                      <th className="px-4 py-3">İkindi</th>
-                      <th className="px-4 py-3">Akşam</th>
-                      <th className="px-4 py-3">Yatsı</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {imsakiyeData.map((day, idx) => {
-                      const isToday = new Date().getDate() === parseInt(day.date.gregorian.day);
-                      // Translate Month
-                      const monthNum = day.date.gregorian.month.number - 1;
-                      const turkishMonth = TURKISH_MONTHS[monthNum] || day.date.gregorian.month.en;
-                      // Translate Day
-                      const turkishDay = TURKISH_DAYS[day.date.gregorian.weekday.en] || day.date.gregorian.weekday.en;
-
-                      return (
-                        <tr key={idx} className={`sacred-glass group text-sm font-bold transition-colors ${isToday ? 'bg-sacred-gold/20 border-sacred-gold' : 'hover:bg-white/5'}`}>
-                          <td className="px-4 py-4 rounded-l-2xl border-l border-t border-b border-sacred-gold/10">
-                            <div className="flex flex-col">
-                              <span className={isToday ? 'text-sacred-gold' : 'text-white'}>{day.date.gregorian.day} {turkishMonth}</span>
-                              <span className="text-[9px] text-white/30 font-black uppercase tracking-tighter">{turkishDay}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                            <span className={isToday ? 'text-sacred-gold' : 'text-white/60'}>{day.timings.Imsak}</span>
-                          </td>
-                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                            <span className="text-white/40">{day.timings.Sunrise}</span>
-                          </td>
-                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Dhuhr}</td>
-                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Asr}</td>
-                          <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                            <span className={isToday ? 'text-sacred-gold' : 'text-white font-black'}>{day.timings.Maghrib}</span>
-                          </td>
-                          <td className="px-4 py-4 rounded-r-2xl border-r border-t border-b border-sacred-gold/10 tabular-nums text-white/40">{day.timings.Isha}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* About Modal */}
-      <AnimatePresence>
-        {showAboutModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] bg-emerald-deep/90 backdrop-blur-3xl flex items-center justify-center p-6"
-            onClick={() => setShowAboutModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-sm sacred-glass p-8 rounded-[40px] border-sacred-gold/20 flex flex-col items-center gap-6"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-16 h-16 rounded-3xl bg-sacred-gold/20 flex items-center justify-center">
-                <Info size={32} className="text-sacred-gold" />
-              </div>
-
-              <div className="flex flex-col items-center gap-2">
-                <h3 className="text-2xl font-black text-white">Hakkında</h3>
-                <p className="text-xs text-white/30 font-bold uppercase tracking-widest underline decoration-sacred-gold/30 underline-offset-4">İftar Vakti Pro {VERSION}</p>
-              </div>
-
-              <p className="text-sm text-white/60 leading-relaxed text-center font-medium">
-                Bu uygulama, Ramazan ayında namaz ve iftar vakitlerini modern bir arayüzle sunmak amacıyla <span className="text-sacred-gold font-bold">systemconf</span> tarafından açık kaynak kodlu olarak geliştirilmiştir.
-              </p>
-
-              <div className="flex flex-col gap-3 w-full">
-                {notifEnabled && (
-                  <button
-                    onClick={sendTestNotification}
-                    className="w-full py-4 bg-white/5 text-sacred-gold rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 border border-sacred-gold/20 active:scale-95 transition-all shadow-lg"
-                  >
-                    <BellRing size={18} />
-                    Test Bildirimi Gönder
-                  </button>
-                )}
-                <a href="http://systemconf.online/" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-sacred-gold text-emerald-deep rounded-2xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  <Globe size={18} />
-                  systemconf.online
-                </a>
-                <button onClick={() => setShowAboutModal(false)} className="w-full py-4 bg-white/5 text-white/40 rounded-2xl font-bold text-sm uppercase tracking-widest active:scale-95 transition-all">
-                  Kapat
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SettingsModal
+        showSettingsModal={showSettingsModal}
+        setShowSettingsModal={setShowSettingsModal}
+        appSettings={appSettings}
+        setAppSettings={setAppSettings}
+        notifEnabled={notifEnabled}
+      />
     </div>
   );
 }
