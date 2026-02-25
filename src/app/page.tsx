@@ -127,7 +127,7 @@ export default function Home() {
       fetchImsakiye(lat, lng);
       setLoading(false);
 
-      if (notifEnabled) {
+      if (notifEnabled || ('Notification' in window && Notification.permission === 'granted')) {
         scheduleIftarNotification(result.timings.Maghrib);
         scheduleSahurNotification(result.timings.Fajr);
       }
@@ -212,6 +212,11 @@ export default function Home() {
 
     initCity();
     loadSettings();
+
+    // Check existing notification permission
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setNotifEnabled(true);
+    }
   }, [fetchPrayerTimes, getCurrentGeolocation]);
 
   useEffect(() => {
