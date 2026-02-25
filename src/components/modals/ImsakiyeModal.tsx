@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { PrayerData } from '@/lib/api';
+import { normalizeTimeString } from '@/lib/utils-time';
 
 const TURKISH_MONTHS = [
     'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
@@ -111,22 +112,28 @@ export default function ImsakiyeModal({
                                             </div>
                                         </td>
                                         <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                                            <span className={isToday ? 'text-sacred-gold' : 'text-white/60'}>{day.timings.Imsak}</span>
+                                            <span className={isToday ? 'text-sacred-gold' : 'text-white/60'}>
+                                                {normalizeTimeString(day.timings.Imsak)}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                                            <span className="text-white/40">{day.timings.Sunrise}</span>
+                                            <span className="text-white/40">
+                                                {normalizeTimeString(day.timings.Sunrise)}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">
-                                            {day.timings.Dhuhr}
+                                            {normalizeTimeString(day.timings.Dhuhr)}
                                         </td>
                                         <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums text-white/40">
-                                            {day.timings.Asr}
+                                            {normalizeTimeString(day.timings.Asr)}
                                         </td>
                                         <td className="px-4 py-4 border-t border-b border-sacred-gold/10 tabular-nums">
-                                            <span className={isToday ? 'text-sacred-gold' : 'text-white font-black'}>{day.timings.Maghrib}</span>
+                                            <span className={isToday ? 'text-sacred-gold' : 'text-white font-black'}>
+                                                {normalizeTimeString(day.timings.Maghrib)}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 rounded-r-2xl border-r border-t border-b border-sacred-gold/10 tabular-nums text-white/40">
-                                            {day.timings.Isha}
+                                            {normalizeTimeString(day.timings.Isha)}
                                         </td>
                                     </tr>
                                 );

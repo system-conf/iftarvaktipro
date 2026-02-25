@@ -1,8 +1,15 @@
 import { parse, differenceInSeconds, addDays, isAfter } from 'date-fns';
 
-export const getCountdown = (targetTime: string) => {
-    const now = new Date();
-    const target = parse(targetTime, 'HH:mm', now);
+export const normalizeTimeString = (time: string): string => {
+    if (!time) return time;
+
+    const match = time.match(/\d{1,2}:\d{2}/);
+    return match ? match[0] : time;
+};
+
+export const getCountdown = (targetTime: string, now: Date = new Date()) => {
+    const normalized = normalizeTimeString(targetTime);
+    const target = parse(normalized, 'HH:mm', now);
 
     if (isAfter(now, target)) {
         // If time has passed today, target is tomorrow

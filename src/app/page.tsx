@@ -2,17 +2,13 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getPrayerTimesByCoords, getCalendarByCoords, PrayerData } from '@/lib/api';
-import { getCountdown, formatDuration } from '@/lib/utils-time';
-import { prayerNamesTr, prayerNamesEn, prayerIconComponents, MAIN_PRAYERS } from '@/lib/prayer-names';
+import { formatDuration, normalizeTimeString } from '@/lib/utils-time';
+import { prayerNamesTr, prayerNamesEn, prayerIconComponents } from '@/lib/prayer-names';
 import { turkishCities, City } from '@/lib/cities';
-import {
-  requestNotificationPermission,
-  scheduleIftarNotification,
-  scheduleSahurNotification,
-  sendTestNotification,
-  scheduleWaterReminder,
-  schedulePrayerNotifications
-} from '@/lib/notifications';
+import { sendTestNotification } from '@/lib/notifications';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { useCountdown } from '@/hooks/useCountdown';
+import { useNotifications } from '@/hooks/useNotifications';
 import {
   Moon,
   MapPin,
@@ -51,11 +47,11 @@ const VERSION = 'v1.1.0';
 export default function Home() {
   const [data, setData] = useState<PrayerData | null>(null);
   const [imsakiyeData, setImsakiyeData] = useState<PrayerData[]>([]);
-  const [countdown, setCountdown] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [splashLoading, setSplashLoading] = useState(true);
   const [cityName, setCityName] = useState('Konum alınıyor...');
-  const [isCelebrating, setIsCelebrating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { appSettings, setAppSettings } = useAppSettings();
 
   // Minimum splash time to ensure UX quality
   useEffect(() => {
@@ -69,32 +65,14 @@ export default function Home() {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [citySearch, setCitySearch] = useState('');
-  const [notifEnabled, setNotifEnabled] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('iftar');
   const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [currentDate, setCurrentDate] = useState('');
-  const [appSettings, setAppSettings] = useState<{
-    language: string;
-    waterReminder: boolean;
-    prayerNotifications: boolean;
-    fontSize?: 'small' | 'medium' | 'large';
-  }>({
-    language: 'tr',
-    waterReminder: true,
-    prayerNotifications: false,
-    fontSize: 'medium'
+  const { notifEnabled, handleNotifToggle } = useNotifications(data, {
+    waterReminder: appSettings.waterReminder,
+    prayerNotifications: appSettings.prayerNotifications,
   });
-
-  useEffect(() => {
-    const html = document.documentElement;
-    if (appSettings.fontSize === 'small') {
-      html.style.fontSize = '14px';
-    } else if (appSettings.fontSize === 'large') {
-      html.style.fontSize = '18px';
-    } else {
-      html.style.fontSize = '16px';
-    }
-  }, [appSettings.fontSize]);
+  const { countdown, isCelebrating, activePrayer } = useCountdown(data, viewMode);
 
   useEffect(() => {
     const now = new Date();
@@ -117,25 +95,23 @@ export default function Home() {
       setImsakiyeData(result);
     } catch (error) {
       console.error('İmsakiye verileri alınamadı:', error);
+      setError('İmsakiye verileri alınırken bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
     }
   }, []);
 
   const fetchPrayerTimes = useCallback(async (lat: number, lng: number) => {
     try {
+      setError(null);
       const result = await getPrayerTimesByCoords(lat, lng);
       setData(result);
       fetchImsakiye(lat, lng);
       setLoading(false);
-
-      if (notifEnabled || ('Notification' in window && Notification.permission === 'granted')) {
-        scheduleIftarNotification(result.timings.Maghrib);
-        scheduleSahurNotification(result.timings.Fajr);
-      }
     } catch (error) {
       console.error('Namaz vakitleri alınamadı:', error);
+      setError('Namaz vakitleri alınırken bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
       setLoading(false);
     }
-  }, [notifEnabled, fetchImsakiye]);
+  }, [fetchImsakiye]);
 
   const getCurrentGeolocation = useCallback(async () => {
     setLoading(true);
@@ -172,13 +148,14 @@ export default function Home() {
             setCityName(closestCityName);
             setLoading(false);
             localStorage.removeItem('selectedCity');
-          } catch {
+          } catch (err) {
             setCityName('İstanbul');
             fetchPrayerTimes(41.0082, 28.9784);
           }
         },
         (error) => {
           console.error('Geolocation error:', error.message, 'Code:', error.code);
+          setError('Konum bilginize erişilemedi. Lütfen tarayıcı konum izinlerini kontrol edin veya şehir seçin.');
           setCityName('İstanbul');
           fetchPrayerTimes(41.0082, 28.9784);
         },
@@ -203,44 +180,8 @@ export default function Home() {
       getCurrentGeolocation();
     }
 
-    const loadSettings = () => {
-      const savedSettings = localStorage.getItem('appSettings');
-      if (savedSettings) {
-        setAppSettings(JSON.parse(savedSettings));
-      }
-    };
-
     initCity();
-    loadSettings();
-
-    // Check existing notification permission
-    if ('Notification' in window && Notification.permission === 'granted') {
-      setNotifEnabled(true);
-    }
   }, [fetchPrayerTimes, getCurrentGeolocation]);
-
-  useEffect(() => {
-    if (!data) return;
-    const targetKey = viewMode === 'iftar' ? 'Maghrib' : 'Imsak';
-    const timer = setInterval(() => {
-      const now = new Date();
-      const targetTimeStr = data.timings[targetKey];
-      const target = new Date();
-      const [h, m] = targetTimeStr.split(':').map(Number);
-      target.setHours(h, m, 0, 0);
-
-      const diffMs = now.getTime() - target.getTime();
-      if (diffMs >= 0 && diffMs < 30 * 60 * 1000) {
-        setIsCelebrating(true);
-      } else {
-        setIsCelebrating(false);
-      }
-
-      const diff = getCountdown(targetTimeStr);
-      setCountdown(diff);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [data, viewMode]);
 
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
@@ -252,23 +193,6 @@ export default function Home() {
     fetchPrayerTimes(city.lat, city.lng);
   };
 
-  const handleNotifToggle = async () => {
-    if (!notifEnabled) {
-      const granted = await requestNotificationPermission();
-      if (granted) {
-        setNotifEnabled(true);
-        if (data) {
-          scheduleIftarNotification(data.timings.Maghrib);
-          scheduleSahurNotification(data.timings.Fajr);
-          if (appSettings.waterReminder) scheduleWaterReminder(data.timings.Fajr);
-          if (appSettings.prayerNotifications) schedulePrayerNotifications(data.timings);
-        }
-      }
-    } else {
-      setNotifEnabled(false);
-    }
-  };
-
   const filteredCities = useMemo(
     () =>
       turkishCities.filter((c) =>
@@ -277,20 +201,6 @@ export default function Home() {
     [citySearch]
   );
 
-  const getActivePrayer = () => {
-    if (!data) return '';
-    const now = new Date();
-    for (let i = MAIN_PRAYERS.length - 1; i >= 0; i--) {
-      const prayer = MAIN_PRAYERS[i];
-      const [h, m] = data.timings[prayer].split(':').map(Number);
-      const prayerDate = new Date();
-      prayerDate.setHours(h, m, 0, 0);
-      if (now >= prayerDate) return prayer;
-    }
-    return MAIN_PRAYERS[0];
-  };
-
-  const activePrayer = getActivePrayer();
   const time = formatDuration(countdown);
 
 
@@ -391,6 +301,16 @@ export default function Home() {
       <div className="max-w-6xl mx-auto w-full">
         {/* Date */}
         <div className="relative z-10 px-6 mt-8 flex flex-col items-center md:items-start">
+          {error && (
+            <div className="w-full max-w-2xl mb-4">
+              <div className="sacred-glass border border-red-500/40 bg-red-950/40 text-red-100 px-4 py-3 rounded-2xl text-sm font-semibold flex items-start gap-3">
+                <span className="mt-0.5 text-xs font-black uppercase tracking-[0.2em] text-red-300">
+                  Uyarı
+                </span>
+                <p className="text-sm text-red-100">{error}</p>
+              </div>
+            </div>
+          )}
           <div className="px-5 py-1.5 sacred-glass rounded-full border-sacred-gold/10">
             <p className="text-[10px] font-black text-sacred-gold tracking-[0.3em] uppercase">{currentDate}</p>
           </div>
@@ -497,7 +417,11 @@ export default function Home() {
                     <div className="flex flex-col">
                       <span className="text-[9px] uppercase font-black tracking-widest text-white/30">{appSettings.language === 'tr' ? 'Hedef Vakit' : 'Target Time'}</span>
                       <span className="text-xl font-black text-white tabular-nums text-center lg:text-left">
-                        {viewMode === 'iftar' ? data?.timings.Maghrib : data?.timings.Imsak}
+                        {data
+                          ? (viewMode === 'iftar'
+                            ? normalizeTimeString(data.timings.Maghrib)
+                            : normalizeTimeString(data.timings.Imsak))
+                          : '--:--'}
                       </span>
                     </div>
                   </motion.div>

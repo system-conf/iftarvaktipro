@@ -1,3 +1,6 @@
+import { PrayerData } from './api';
+import { normalizeTimeString } from './utils-time';
+
 export const requestNotificationPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
         console.warn('Bu tarayıcı bildirimleri desteklemiyor.');
@@ -55,95 +58,91 @@ export const sendNotification = async (title: string, body: string, icon?: strin
     }
 };
 
-export const scheduleIftarNotification = (iftarTime: string) => {
+const scheduleNotificationAtTime = (
+    time: string,
+    offsetMs: number,
+    title: string,
+    body: string
+): number | null => {
     const now = new Date();
-    const [hours, minutes] = iftarTime.split(':').map(Number);
+    const [hours, minutes] = normalizeTimeString(time).split(':').map(Number);
 
     const target = new Date();
     target.setHours(hours, minutes, 0, 0);
 
-    // 15 minutes before iftar
-    const alertTime = new Date(target.getTime() - 15 * 60 * 1000);
-
+    const alertTime = new Date(target.getTime() + offsetMs);
     const diff = alertTime.getTime() - now.getTime();
 
-    if (diff > 0) {
-        setTimeout(async () => {
-            await sendNotification(
-                '🌙 İftar Yaklaşıyor!',
-                `İftara 15 dakika kaldı. Hazırlıklarınızı yapın!`
-            );
-        }, diff);
-    }
+    if (diff <= 0) return null;
 
-    // At iftar time
-    const iftarDiff = target.getTime() - now.getTime();
-    if (iftarDiff > 0) {
-        setTimeout(async () => {
-            await sendNotification(
-                '🕌 İftar Vakti!',
-                'Hayırlı iftarlar! Oruçlarınız kabul olsun.'
-            );
-        }, iftarDiff);
-    }
+    const timeoutId = window.setTimeout(async () => {
+        await sendNotification(title, body);
+    }, diff);
+
+    return timeoutId;
 };
 
-export const scheduleSahurNotification = (fajrTime: string) => {
-    const now = new Date();
-    const [hours, minutes] = fajrTime.split(':').map(Number);
+export const scheduleIftarNotification = (iftarTime: string): number[] => {
+    const ids: number[] = [];
 
-    const target = new Date();
-    target.setHours(hours, minutes, 0, 0);
+    const beforeId = scheduleNotificationAtTime(
+        iftarTime,
+        -15 * 60 * 1000,
+        '🌙 İftar Yaklaşıyor!',
+        'İftara 15 dakika kaldı. Hazırlıklarınızı yapın!'
+    );
+    if (beforeId !== null) ids.push(beforeId);
 
-    // 30 minutes before sahur ends
-    const alertTime = new Date(target.getTime() - 30 * 60 * 1000);
+    const atTimeId = scheduleNotificationAtTime(
+        iftarTime,
+        0,
+        '🕌 İftar Vakti!',
+        'Hayırlı iftarlar! Oruçlarınız kabul olsun.'
+    );
+    if (atTimeId !== null) ids.push(atTimeId);
 
-    const diff = alertTime.getTime() - now.getTime();
-
-    if (diff > 0) {
-        setTimeout(async () => {
-            await sendNotification(
-                '🌅 Sahur Bitiyor!',
-                `İmsak vaktine 30 dakika kaldı. Son lokmalarınızı alın!`
-            );
-        }, diff);
-    }
-
-    // At sahur time
-    const sahurDiff = target.getTime() - now.getTime();
-    if (sahurDiff > 0) {
-        setTimeout(async () => {
-            await sendNotification(
-                '🕌 İmsak Vakti!',
-                'Hayırlı sahurlar! Oruçlarınız kabul olsun.'
-            );
-        }, sahurDiff);
-    }
+    return ids;
 };
 
-export const scheduleWaterReminder = (fajrTime: string) => {
-    const now = new Date();
-    const [hours, minutes] = fajrTime.split(':').map(Number);
+export const scheduleSahurNotification = (fajrTime: string): number[] => {
+    const ids: number[] = [];
 
-    const target = new Date();
-    target.setHours(hours, minutes, 0, 0);
+    const beforeId = scheduleNotificationAtTime(
+        fajrTime,
+        -30 * 60 * 1000,
+        '🌅 Sahur Bitiyor!',
+        'İmsak vaktine 30 dakika kaldı. Son lokmalarınızı alın!'
+    );
+    if (beforeId !== null) ids.push(beforeId);
 
-    // 45 minutes before sahur ends for water reminder
-    const alertTime = new Date(target.getTime() - 45 * 60 * 1000);
-    const diff = alertTime.getTime() - now.getTime();
+    const atTimeId = scheduleNotificationAtTime(
+        fajrTime,
+        0,
+        '🕌 İmsak Vakti!',
+        'Hayırlı sahurlar! Oruçlarınız kabul olsun.'
+    );
+    if (atTimeId !== null) ids.push(atTimeId);
 
-    if (diff > 0) {
-        setTimeout(async () => {
-            await sendNotification(
-                '💧 Su İçmeyi Unutmayın!',
-                'İmsak vaktine 45 dakika kaldı. Bol su içmeyi ihmal etmeyin.'
-            );
-        }, diff);
-    }
+    return ids;
 };
 
-export const schedulePrayerNotifications = (timings: Record<string, string>) => {
-    const now = new Date();
+export const scheduleWaterReminder = (fajrTime: string): number[] => {
+    const ids: number[] = [];
+
+    const id = scheduleNotificationAtTime(
+        fajrTime,
+        -45 * 60 * 1000,
+        '💧 Su İçmeyi Unutmayın!',
+        'İmsak vaktine 45 dakika kaldı. Bol su içmeyi ihmal etmeyin.'
+    );
+
+    if (id !== null) ids.push(id);
+
+    return ids;
+};
+
+export const schedulePrayerNotifications = (timings: Record<string, string>): number[] => {
+    const ids: number[] = [];
     const prayers = [
         { key: 'Fajr', name: 'Sabah Namazı' },
         { key: 'Dhuhr', name: 'Öğle Namazı' },
@@ -155,21 +154,37 @@ export const schedulePrayerNotifications = (timings: Record<string, string>) => 
     prayers.forEach((prayer) => {
         if (!timings[prayer.key]) return;
 
-        const [hours, minutes] = timings[prayer.key].split(':').map(Number);
-        const target = new Date();
-        target.setHours(hours, minutes, 0, 0);
+        const id = scheduleNotificationAtTime(
+            timings[prayer.key],
+            0,
+            `🕌 ${prayer.name} Vakti`,
+            `${prayer.name} vakti girdi. Hayırlı ibadetler.`
+        );
 
-        const diff = target.getTime() - now.getTime();
-
-        if (diff > 0) {
-            setTimeout(async () => {
-                await sendNotification(
-                    `🕌 ${prayer.name} Vakti`,
-                    `${prayer.name} vakti girdi. Hayırlı ibadetler.`
-                );
-            }, diff);
-        }
+        if (id !== null) ids.push(id);
     });
+
+    return ids;
+};
+
+export const scheduleAllNotifications = (
+    data: PrayerData,
+    options: { waterReminder: boolean; prayerNotifications: boolean }
+): number[] => {
+    const ids: number[] = [];
+
+    ids.push(...scheduleIftarNotification(data.timings.Maghrib));
+    ids.push(...scheduleSahurNotification(data.timings.Fajr));
+
+    if (options.waterReminder) {
+        ids.push(...scheduleWaterReminder(data.timings.Fajr));
+    }
+
+    if (options.prayerNotifications) {
+        ids.push(...schedulePrayerNotifications(data.timings));
+    }
+
+    return ids;
 };
 
 export const sendTestNotification = async () => {

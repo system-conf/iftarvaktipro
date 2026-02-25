@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { prayerNamesTr, prayerNamesEn, prayerIconComponents, MAIN_PRAYERS } from '@/lib/prayer-names';
 import { PrayerData } from '@/lib/api';
+import { normalizeTimeString } from '@/lib/utils-time';
 
 interface PrayerTimesListProps {
     appSettings: { language: string };
@@ -50,7 +51,7 @@ export default function PrayerTimesList({ appSettings, activePrayer, data }: Pra
                                 </div>
                             </div>
                             <span className={`text-xl font-black tabular-nums ${isActive ? 'text-sacred-gold' : 'text-white/40'}`}>
-                                {data?.timings[prayer]}
+                                {data ? normalizeTimeString(data.timings[prayer]) : '--:--'}
                             </span>
                         </motion.div>
                     );
