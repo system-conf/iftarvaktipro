@@ -41,10 +41,24 @@ The application features a unique design language called "Sacred Heritage." Emer
 ## Technical Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router & Turbopack)
+- **Language**: TypeScript (strict mode, `@/*` path alias)
 - **UI & Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Data Source**: [Aladhan Prayer Times API](https://aladhan.com/prayer-times-api)
-- **PWA**: Integrated via `next-pwa` for offline support and background notifications.
+- **PWA & Notifications**: Integrated via `next-pwa` for offline support and browser notifications handled via service workers.
+- **Testing**: Jest + Testing Library for unit testing time utilities, active prayer selection, and notification scheduling.
+
+### Architecture Overview
+
+- **Page structure**: Main screen is implemented under `src/app/page.tsx` using the App Router.
+- **State management**:
+  - `useAppSettings`: Manages language, font sizing, and notification preferences while persisting them to `localStorage` and updating the root HTML font size.
+  - `useCountdown`: Calculates the countdown for iftar/suhoor based on the current mode and toggles a celebratory state around the target time.
+  - `useNotifications`: Handles notification permission state and uses `scheduleAllNotifications` to register all iftar/suhoor/prayer/water reminders, clearing old timeouts when city or settings change.
+- **Utility layer**:
+  - `src/lib/utils-time.ts`: Time helpers such as `normalizeTimeString`, `getCountdown`, and `formatDuration`.
+  - `src/lib/notifications.ts`: Central entry point `scheduleAllNotifications` orchestrates all notification scheduling.
+  - `src/lib/api.ts`: Encapsulates Aladhan API calls (`getPrayerTimesByCoords`, `getCalendarByCoords`).
 
 ## Installation & Setup
 
@@ -63,6 +77,30 @@ To run the project locally:
    npm run dev
    ```
 4. Visit `http://localhost:3000` in your browser.
+
+### Development & Testing Commands
+
+- **Lint**:
+  ```bash
+  npm run lint
+  ```
+
+- **Run tests once**:
+  ```bash
+  npm test
+  ```
+
+- **Watch mode during development**:
+  ```bash
+  npm run test:watch
+  ```
+
+- **Production build + PWA**:
+  ```bash
+  npm run build
+  npm start
+  ```
+  After a production build, `next-pwa` enables the service worker and caching, turning the app into a fully functional PWA.
 
 ## Screenshots
 
