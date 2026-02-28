@@ -31,8 +31,8 @@ describe('scheduleAllNotifications', () => {
       date: {
         readable: '',
         timestamp: '',
-        gregorian: {} as any,
-        hijri: {} as any,
+        gregorian: {} as unknown as PrayerData['date']['gregorian'],
+        hijri: {} as unknown as PrayerData['date']['hijri'],
       },
       meta: {
         latitude: 0,

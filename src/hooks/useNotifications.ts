@@ -33,6 +33,7 @@ export const useNotifications = (data: PrayerData | null, options: NotificationO
 
     clearScheduledNotifications();
     timeoutsRef.current = scheduleAllNotifications(data, options);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifEnabled, data, options.waterReminder, options.prayerNotifications, clearScheduledNotifications]);
 
   const handleNotifToggle = useCallback(async () => {
