@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { getPrayerTimesByCoords, getCalendarByCoords, PrayerData } from '@/lib/api';
 import { formatDuration, normalizeTimeString } from '@/lib/utils-time';
-import { prayerNamesTr, prayerNamesEn, prayerIconComponents } from '@/lib/prayer-names';
 import { turkishCities, City } from '@/lib/cities';
 import { sendTestNotification } from '@/lib/notifications';
 import { useAppSettings } from '@/hooks/useAppSettings';
@@ -11,25 +11,15 @@ import { useCountdown } from '@/hooks/useCountdown';
 import { useNotifications } from '@/hooks/useNotifications';
 import {
   Moon,
-  MapPin,
   Bell,
   BellRing,
-  Search,
-  X,
   ChevronDown,
-  Clock,
   Sunrise,
   Sunset,
   Star,
   CloudMoon,
-  Navigation,
-  Calendar,
   Github,
   Globe,
-  Info,
-  Settings,
-  Droplets,
-  Languages,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AboutModal from '@/components/modals/AboutModal';
@@ -148,7 +138,7 @@ export default function Home() {
             setCityName(closestCityName);
             setLoading(false);
             localStorage.removeItem('selectedCity');
-          } catch (err) {
+          } catch {
             setCityName('İstanbul');
             fetchPrayerTimes(41.0082, 28.9784);
           }
@@ -222,10 +212,13 @@ export default function Home() {
               transition={{ duration: 1, ease: "easeOut" }}
               className="relative w-full max-w-[280px] aspect-[4/5] rounded-[50px] overflow-hidden shadow-[0_0_50px_rgba(2,44,34,0.5)] border border-sacred-gold/20"
             >
-              <img
+              <Image
                 src="/kapak.png"
                 alt="İftar Vakti Pro"
+                width={280}
+                height={350}
                 className="w-full h-full object-cover"
+                priority
               />
               {/* Gradient Overlays for a premium feel */}
               <div className="absolute inset-0 bg-gradient-to-t from-sacred-bg via-transparent to-sacred-bg/40 opacity-80" />

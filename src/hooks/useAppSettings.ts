@@ -23,6 +23,7 @@ export const useAppSettings = () => {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings) as AppSettings;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAppSettings({
           ...DEFAULT_SETTINGS,
           ...parsed,
